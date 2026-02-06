@@ -1,6 +1,15 @@
 "use client"
 
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
+import {
   mockGovernanceDocuments,
   mockFinancialSummaries,
   mockMembers,
@@ -39,6 +48,18 @@ export function DashboardContent() {
   const events = mockEvents
     .filter((e) => e.organizationId === currentOrganizationId)
     .slice(0, 3)
+  const eventCount = mockEvents.filter(
+    (e) => e.organizationId === currentOrganizationId
+  ).length
+  const overviewChartData = [
+    { name: "Members", value: memberCount, fullLabel: `${memberCount} members` },
+    { name: "Events", value: eventCount, fullLabel: `${eventCount} events` },
+    {
+      name: "Dues YTD (₦k)",
+      value: financial ? Math.round(financial.duesCollectedYtd / 1000) : 0,
+      fullLabel: financial ? formatCurrency(financial.duesCollectedYtd) : "—",
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -55,6 +76,24 @@ export function DashboardContent() {
         Read-only overview of Executive Governance, Financial Integrity,
         Membership Lifecycle, and Project Operations.
       </p>
+      <div className="mt-6 h-52 w-full max-w-2xl rounded-lg border p-4" style={{ borderColor: "var(--border)" }}>
+        <p className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
+          Key metrics
+        </p>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={overviewChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" vertical={false} />
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+            <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} allowDecimals={false} />
+            <Tooltip
+              formatter={(value: number, name: string, props: { payload: { fullLabel: string } }) => [props.payload.fullLabel, name]}
+              contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }}
+              labelStyle={{ color: "var(--primary)" }}
+            />
+            <Bar dataKey="value" name="Value" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <PillarCard title="Executive Governance" to={ROUTES.GOVERNANCE}>
           {documents.length === 0 ? (

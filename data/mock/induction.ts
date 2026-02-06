@@ -1,5 +1,8 @@
 import type { InductionChecklistItem, InductionProspect } from "@/types"
 
+/** Minimum meetings/events required to pass the participation gate */
+export const REQUIRED_PARTICIPATION_MEETINGS = 2
+
 export const INDUCTION_CHECKLIST: InductionChecklistItem[] = [
   { stage: "prospect", key: "contact_made", label: "Initial contact made", required: true },
   { stage: "prospect", key: "interest_confirmed", label: "Interest confirmed", required: true },
@@ -22,6 +25,9 @@ export const mockInductionProspects: InductionProspect[] = [
     checklistCompleted: { contact_made: true, interest_confirmed: true },
     stageMovedAt: "2026-01-15T12:00:00Z",
     createdAt: "2026-01-10T09:00:00Z",
+    orientationVerified: false,
+    profileComplete: false,
+    participationCount: 0,
   },
   {
     id: "ind-2",
@@ -38,6 +44,9 @@ export const mockInductionProspects: InductionProspect[] = [
     },
     stageMovedAt: "2026-02-01T10:00:00Z",
     createdAt: "2026-01-20T14:00:00Z",
+    orientationVerified: false,
+    profileComplete: true,
+    participationCount: 1,
   },
   {
     id: "ind-3",
@@ -56,6 +65,9 @@ export const mockInductionProspects: InductionProspect[] = [
     },
     stageMovedAt: "2026-02-05T11:00:00Z",
     createdAt: "2025-12-01T09:00:00Z",
+    orientationVerified: true,
+    profileComplete: true,
+    participationCount: 2,
   },
   {
     id: "ind-4",
@@ -77,5 +89,10 @@ export const mockInductionProspects: InductionProspect[] = [
     stageMovedAt: "2026-02-10T15:00:00Z",
     createdAt: "2025-11-01T09:00:00Z",
     memberId: "m-5",
+    orientationVerified: true,
+    profileComplete: true,
+    participationCount: 3,
+    inductionDate: "2026-02-10T15:00:00Z",
+    inductionClass: "The Resilience Class 2026",
   },
 ]

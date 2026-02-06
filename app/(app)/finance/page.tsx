@@ -2,6 +2,18 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts"
 import { ChevronDown, ChevronRight, FileText } from "lucide-react"
 import {
   mockFinancialSummaries,
@@ -225,6 +237,7 @@ export default function FinancePage() {
                 burnRatePct={burnRatePct}
                 totalAllocated={totalAllocated}
                 totalSpent={totalSpent}
+                budgets={budgets}
                 formatCurrency={formatCurrency}
               />
             </motion.div>
@@ -303,6 +316,7 @@ function TreasuryDashboard({
   totalAllocated,
   totalSpent,
   formatCurrency,
+  budgets,
 }: {
   totalLiquidity: number
   duesCollectionPct: number
@@ -310,8 +324,15 @@ function TreasuryDashboard({
   totalAllocated: number
   totalSpent: number
   formatCurrency: (n: number) => string
+  budgets: BudgetCategory[]
 }) {
+  const budgetChartData = budgets.map((b) => ({
+    name: b.name,
+    allocated: b.allocated,
+    spent: b.spent,
+  }))
   return (
+    <div className="space-y-4">
     <div className="grid gap-4 sm:grid-cols-3">
       <Card>
         <CardContent className="p-4">
@@ -375,6 +396,33 @@ function TreasuryDashboard({
         </CardContent>
       </Card>
     </div>
+    {budgetChartData.length > 0 && (
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
+            Budget by category
+          </p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={budgetChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                  contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }}
+                  labelStyle={{ color: "var(--primary)" }}
+                />
+                <Legend />
+                <Bar dataKey="allocated" name="Allocated" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="spent" name="Spent" fill="var(--primary)" fillOpacity={0.7} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+    </div>
   )
 }
 
@@ -394,7 +442,29 @@ function BudgetsTab({
       </Card>
     )
   }
+  const budgetChartData = budgets.map((b) => ({ name: b.name, allocated: b.allocated, spent: b.spent }))
   return (
+    <div className="space-y-4">
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
+          Budget by category
+        </p>
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={budgetChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+              <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+              <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
+              <Legend />
+              <Bar dataKey="allocated" name="Allocated" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="spent" name="Spent" fill="var(--primary)" fillOpacity={0.7} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
     <Card>
       <CardContent className="p-4">
         <ul className="space-y-4">
@@ -429,6 +499,7 @@ function BudgetsTab({
         </ul>
       </CardContent>
     </Card>
+    </div>
   )
 }
 
@@ -869,7 +940,41 @@ function LedgerTab({
     )
   }
   const getCategoryName = (id: string | null) => (id ? budgets.find((b) => b.id === id)?.name ?? "Other" : "General")
+  const monthKeys = new Map<string, { income: number; expense: number }>()
+  transactions.forEach((tx) => {
+    const month = tx.date.slice(0, 7)
+    const entry = monthKeys.get(month) ?? { income: 0, expense: 0 }
+    if (tx.type === "income") entry.income += tx.amount
+    else entry.expense += tx.amount
+    monthKeys.set(month, entry)
+  })
+  const ledgerChartData = Array.from(monthKeys.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, v]) => ({ month, ...v, name: new Date(month + "-01").toLocaleDateString(undefined, { month: "short", year: "numeric" }) }))
   return (
+    <div className="space-y-4">
+    {ledgerChartData.length > 0 && (
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
+            Income vs expense over time
+          </p>
+          <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={ledgerChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
+                <Legend />
+                <Line type="monotone" dataKey="income" name="Income" stroke="var(--primary)" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="expense" name="Expense" stroke="var(--destructive)" strokeWidth={2} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    )}
     <Card>
       <CardContent className="p-4">
         <ul className="divide-y divide-border/60">
@@ -897,5 +1002,6 @@ function LedgerTab({
         </ul>
       </CardContent>
     </Card>
+    </div>
   )
 }

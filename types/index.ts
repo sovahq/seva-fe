@@ -83,6 +83,16 @@ export interface InductionProspect {
   createdAt: string
   /** When inducted, link to new member id */
   memberId?: string
+  /** HR-confirmed: orientation training complete */
+  orientationVerified?: boolean
+  /** Profile (photo, bio, contact) fully populated */
+  profileComplete?: boolean
+  /** Number of meetings/events attended (for participation gate) */
+  participationCount?: number
+  /** Set when induction ceremony is completed */
+  inductionDate?: string
+  /** e.g. "The Resilience Class 2026" */
+  inductionClass?: string
 }
 
 export interface Organization {

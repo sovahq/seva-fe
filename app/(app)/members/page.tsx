@@ -9,6 +9,7 @@ import {
   mockInductionProspects,
   mockMemberDues,
   INDUCTION_CHECKLIST,
+  REQUIRED_PARTICIPATION_MEETINGS,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
 import { canManage } from "@/lib/permissions"
@@ -35,7 +36,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
 import {
   Search,
   Download,
@@ -44,6 +66,10 @@ import {
   Kanban,
   Mail,
   Phone,
+  Check,
+  Circle,
+  AlertCircle,
+  Award,
 } from "lucide-react"
 
 type MembersTab = "directory" | "engagement" | "induction"
@@ -54,6 +80,38 @@ const INDUCTION_STAGES: { id: InductionStage; label: string }[] = [
   { id: "dues_paid", label: "Dues Paid" },
   { id: "inducted", label: "Inducted" },
 ]
+
+type InductionView = "pipeline" | "ready"
+
+type GateStatus = { finance: boolean; participation: boolean; orientation: boolean; profile: boolean }
+
+function getGateStatus(
+  prospect: InductionProspect,
+  duesPaidMemberIds: Set<string>,
+  duesPaidNames: Set<string>
+): GateStatus {
+  const finance =
+    (prospect.memberId && duesPaidMemberIds.has(prospect.memberId)) ||
+    duesPaidNames.has(prospect.name.trim().toLowerCase())
+  const participation = (prospect.participationCount ?? 0) >= REQUIRED_PARTICIPATION_MEETINGS
+  const orientation = prospect.orientationVerified === true
+  const profile = prospect.profileComplete === true
+  return { finance, participation, orientation, profile }
+}
+
+function countGates(g: GateStatus): number {
+  return [g.finance, g.participation, g.orientation, g.profile].filter(Boolean).length
+}
+
+function isEligibleForInduction(prospect: InductionProspect, gates: GateStatus): boolean {
+  return (
+    prospect.stage === "dues_paid" &&
+    gates.finance &&
+    gates.participation &&
+    gates.orientation &&
+    gates.profile
+  )
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" })
@@ -429,6 +487,17 @@ function EngagementTab({
     })
     return map
   }, [members, lastAttendanceByMember])
+  const healthChartData = useMemo(() => {
+    const counts = { active: 0, at_risk: 0, inactive: 0 }
+    healthByMember.forEach((status) => {
+      counts[status] = (counts[status] ?? 0) + 1
+    })
+    return [
+      { name: "Active", count: counts.active, fill: "var(--chart-active, #10b981)" },
+      { name: "At risk", count: counts.at_risk, fill: "var(--chart-warning, #f59e0b)" },
+      { name: "Inactive", count: counts.inactive, fill: "var(--chart-inactive, #ef4444)" },
+    ]
+  }, [healthByMember])
 
   function togglePresent(memberId: string) {
     setPresentIds((prev) => {
@@ -457,6 +526,24 @@ function EngagementTab({
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
+            Member health distribution
+          </p>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={healthChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
+                <Bar dataKey="count" name="Members" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
       {canManageMembership && (
         <Card>
           <CardContent className="p-4">
@@ -586,125 +673,465 @@ function InductionTab({
   dues: { memberId: string; memberName: string; status: string }[]
   canManageMembership: boolean
 }) {
-  const prospectsByStage = useMemo(() => {
-    const map = new Map<InductionStage, InductionProspect[]>()
-    stages.forEach((s) => map.set(s.id, []))
-    prospects.forEach((p) => {
-      const list = map.get(p.stage) ?? []
-      list.push(p)
-      map.set(p.stage, list)
-    })
-    return map
-  }, [prospects, stages])
+  const [inductionView, setInductionView] = useState<InductionView>("pipeline")
+  const [selectedForInduction, setSelectedForInduction] = useState<Set<string>>(new Set())
+  const [ceremonyOpen, setCeremonyOpen] = useState(false)
+  const [inductionClassName, setInductionClassName] = useState("")
+  const [ceremonySuccess, setCeremonySuccess] = useState(false)
 
-  const duesPaidMemberIds = useMemo(() => new Set(dues.filter((d) => d.status === "paid").map((d) => d.memberId)), [dues])
-  const duesPaidNames = useMemo(() => new Set(dues.filter((d) => d.status === "paid").map((d) => d.memberName.trim().toLowerCase())), [dues])
+  const duesPaidMemberIds = useMemo(
+    () => new Set(dues.filter((d) => d.status === "paid").map((d) => d.memberId)),
+    [dues]
+  )
+  const duesPaidNames = useMemo(
+    () => new Set(dues.filter((d) => d.status === "paid").map((d) => d.memberName.trim().toLowerCase())),
+    [dues]
+  )
+
+  const gateStatusByProspect = useMemo(() => {
+    const map = new Map<string, GateStatus>()
+    prospects.forEach((p) => map.set(p.id, getGateStatus(p, duesPaidMemberIds, duesPaidNames)))
+    return map
+  }, [prospects, duesPaidMemberIds, duesPaidNames])
+
+  const pipelineBuckets = useMemo(() => {
+    const started: InductionProspect[] = []
+    const midway: InductionProspect[] = []
+    const ready: InductionProspect[] = []
+    const inducted: InductionProspect[] = []
+    prospects.forEach((p) => {
+      if (p.stage === "inducted") {
+        inducted.push(p)
+        return
+      }
+      const gates = gateStatusByProspect.get(p.id) ?? { finance: false, participation: false, orientation: false, profile: false }
+      const n = countGates(gates)
+      if (n >= 4 && p.stage === "dues_paid") ready.push(p)
+      else if (n >= 2) midway.push(p)
+      else started.push(p)
+    })
+    return { started, midway, ready, inducted }
+  }, [prospects, gateStatusByProspect])
+
+  const eligibleForInduction = useMemo(
+    () =>
+      prospects.filter((p) => {
+        const gates = gateStatusByProspect.get(p.id) ?? { finance: false, participation: false, orientation: false, profile: false }
+        return isEligibleForInduction(p, gates)
+      }),
+    [prospects, gateStatusByProspect]
+  )
+
+  function updateProspect(prospectId: string, patch: Partial<InductionProspect>) {
+    onProspectsChange(
+      prospects.map((q) => (q.id === prospectId ? { ...q, ...patch } : q))
+    )
+  }
+
+  function runInductionCeremony() {
+    const name = inductionClassName.trim() || "Induction Class " + new Date().getFullYear()
+    const now = new Date().toISOString()
+    const ids = new Set(selectedForInduction)
+    onProspectsChange(
+      prospects.map((p) => {
+        if (!ids.has(p.id)) return p
+        return {
+          ...p,
+          stage: "inducted" as const,
+          stageMovedAt: now,
+          memberId: p.memberId || `m-ind-${p.id}`,
+          inductionDate: now,
+          inductionClass: name,
+          checklistCompleted: {
+            ...p.checklistCompleted,
+            ceremony_completed: true,
+            member_record_created: true,
+          },
+        }
+      })
+    )
+    setCeremonyOpen(false)
+    setInductionClassName("")
+    setSelectedForInduction(new Set())
+    setCeremonySuccess(true)
+    setInductionView("pipeline")
+  }
 
   return (
     <div className="space-y-4">
-      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-        Move prospects through: Prospect → Orientation → Dues Paid → Inducted. Dues Paid is aligned with Finance when a member has paid.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stages.map((stage) => (
-          <Card key={stage.id}>
-            <CardContent className="p-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted-foreground)" }}>
-                {stage.label}
-              </h3>
-              <ul className="space-y-2">
-                {(prospectsByStage.get(stage.id) ?? []).map((p) => (
-                  <InductionCard
-                    key={p.id}
-                    prospect={p}
-                    stageChecklist={checklist.filter((c) => c.stage === stage.id)}
-                    isDuesPaidFromFinance={
-                      (p.memberId && duesPaidMemberIds.has(p.memberId)) ||
-                      duesPaidNames.has(p.name.trim().toLowerCase())
-                    }
-                    canManage={canManageMembership}
-                    stageOrder={stages.map((s) => s.id)}
-                    onMoveStage={
-                      canManageMembership
-                        ? (prospectId, nextStage) => {
-                            const now = new Date().toISOString()
-                            onProspectsChange(
-                              prospects.map((q) =>
-                                q.id === prospectId
-                                  ? { ...q, stage: nextStage, stageMovedAt: now }
-                                  : q
-                              )
-                            )
-                          }
-                        : undefined
-                    }
-                  />
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setInductionView("pipeline")}
+          className={cn(
+            "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+            inductionView === "pipeline" ? "bg-primary/15" : "hover:bg-muted/60"
+          )}
+          style={{ color: inductionView === "pipeline" ? "var(--primary)" : "var(--muted-foreground)" }}
+        >
+          Pipeline
+        </button>
+        <button
+          type="button"
+          onClick={() => setInductionView("ready")}
+          className={cn(
+            "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+            inductionView === "ready" ? "bg-primary/15" : "hover:bg-muted/60"
+          )}
+          style={{ color: inductionView === "ready" ? "var(--primary)" : "var(--muted-foreground)" }}
+        >
+          Ready to Induct
+        </button>
       </div>
+
+      {ceremonySuccess && (
+        <div
+          className="flex items-center gap-3 rounded-xl border p-4"
+          style={{ borderColor: "var(--primary)", backgroundColor: "var(--primary)/8" }}
+        >
+          <Award className="size-8 shrink-0" style={{ color: "var(--primary)" }} />
+          <div>
+            <p className="font-medium" style={{ color: "var(--primary)" }}>
+              Induction complete
+            </p>
+            <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+              Congratulations to the new members. They are now part of the chapter.
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setCeremonySuccess(false)}>
+            Dismiss
+          </Button>
+        </div>
+      )}
+
+      {inductionView === "pipeline" && (
+        <>
+          <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            Prospects are grouped by how many induction gates they have completed: Finance (dues paid), Participation (meetings attended), Orientation (training confirmed), and Profile (complete).
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  Started
+                </h3>
+                <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  0 or 1 gate complete
+                </p>
+                <ul className="space-y-2">
+                  {pipelineBuckets.started.map((p) => (
+                    <MilestoneProgressCard
+                      key={p.id}
+                      prospect={p}
+                      gates={gateStatusByProspect.get(p.id)!}
+                      canManage={canManageMembership}
+                      onUpdateProspect={updateProspect}
+                    />
+                  ))}
+                  {pipelineBuckets.started.length === 0 && (
+                    <li className="text-xs py-2" style={{ color: "var(--muted-foreground)" }}>None</li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  Midway
+                </h3>
+                <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  2 or 3 gates complete
+                </p>
+                <ul className="space-y-2">
+                  {pipelineBuckets.midway.map((p) => (
+                    <MilestoneProgressCard
+                      key={p.id}
+                      prospect={p}
+                      gates={gateStatusByProspect.get(p.id)!}
+                      canManage={canManageMembership}
+                      onUpdateProspect={updateProspect}
+                    />
+                  ))}
+                  {pipelineBuckets.midway.length === 0 && (
+                    <li className="text-xs py-2" style={{ color: "var(--muted-foreground)" }}>None</li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  Ready for Induction
+                </h3>
+                <p className="text-xs mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  All 4 gates complete
+                </p>
+                <ul className="space-y-2">
+                  {pipelineBuckets.ready.map((p) => (
+                    <MilestoneProgressCard
+                      key={p.id}
+                      prospect={p}
+                      gates={gateStatusByProspect.get(p.id)!}
+                      canManage={canManageMembership}
+                      onUpdateProspect={updateProspect}
+                    />
+                  ))}
+                  {pipelineBuckets.ready.length === 0 && (
+                    <li className="text-xs py-2" style={{ color: "var(--muted-foreground)" }}>None</li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted-foreground)" }}>
+                  Inducted
+                </h3>
+                <ul className="space-y-2">
+                  {pipelineBuckets.inducted.map((p) => (
+                    <MilestoneProgressCard
+                      key={p.id}
+                      prospect={p}
+                      gates={gateStatusByProspect.get(p.id)!}
+                      canManage={false}
+                      onUpdateProspect={updateProspect}
+                    />
+                  ))}
+                  {pipelineBuckets.inducted.length === 0 && (
+                    <li className="text-xs py-2" style={{ color: "var(--muted-foreground)" }}>None</li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
+      {inductionView === "ready" && (
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-sm font-medium mb-1" style={{ color: "var(--primary)" }}>
+              Ready for Swearing-in
+            </h3>
+            <p className="text-xs mb-4" style={{ color: "var(--muted-foreground)" }}>
+              Select prospects who have passed all gates, then run the Induction Ceremony to confirm them as members.
+            </p>
+            {eligibleForInduction.length === 0 ? (
+              <p className="text-sm py-4" style={{ color: "var(--muted-foreground)" }}>
+                No prospects are eligible yet. Complete all four gates (Finance, Participation, Orientation, Profile) for prospects in the Dues Paid stage.
+              </p>
+            ) : (
+              <>
+                <ul className="space-y-2 mb-4">
+                  {eligibleForInduction.map((p) => (
+                    <li
+                      key={p.id}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg border p-3",
+                        selectedForInduction.has(p.id) && "border-primary/50 bg-primary/5"
+                      )}
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      {canManageMembership && (
+                        <input
+                          type="checkbox"
+                          checked={selectedForInduction.has(p.id)}
+                          onChange={() => {
+                            setSelectedForInduction((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(p.id)) next.delete(p.id)
+                              else next.add(p.id)
+                              return next
+                            })
+                          }}
+                          className="rounded border-border"
+                          aria-label={`Select ${p.name} for induction`}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{p.name}</p>
+                        <p className="text-xs truncate" style={{ color: "var(--muted-foreground)" }}>{p.email}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {canManageMembership && (
+                  <Button
+                    onClick={() => setCeremonyOpen(true)}
+                    disabled={selectedForInduction.size === 0}
+                    className="gap-2"
+                  >
+                    <Award className="size-4" />
+                    Induction Ceremony
+                  </Button>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <AlertDialog open={ceremonyOpen} onOpenChange={setCeremonyOpen}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Induction Ceremony</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirm the selected prospects as full members. You can give this induction batch a class name (e.g. "The Resilience Class 2026").
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="induction-class">Induction class name</Label>
+            <Input
+              id="induction-class"
+              placeholder="e.g. The Resilience Class 2026"
+              value={inductionClassName}
+              onChange={(e) => setInductionClassName(e.target.value)}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={runInductionCeremony}>
+              Confirm induction
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
-function InductionCard({
+function GateIndicator({
+  complete,
+  label,
+  pendingLabel,
+}: {
+  complete: boolean
+  label: string
+  pendingLabel: string
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-xs"
+      title={complete ? label : pendingLabel}
+    >
+      {complete ? (
+        <Check className="size-3.5 text-emerald-600 shrink-0" aria-hidden />
+      ) : (
+        <span className="size-3.5 rounded-full border shrink-0" style={{ borderColor: "var(--muted-foreground)", backgroundColor: "var(--muted)" }} aria-hidden />
+      )}
+      <span style={{ color: complete ? "var(--foreground)" : "var(--muted-foreground)" }}>
+        {complete ? label : pendingLabel}
+      </span>
+    </span>
+  )
+}
+
+function MilestoneProgressCard({
   prospect,
-  stageChecklist,
-  isDuesPaidFromFinance,
+  gates,
   canManage,
-  stageOrder,
-  onMoveStage,
+  onUpdateProspect,
 }: {
   prospect: InductionProspect
-  stageChecklist: { key: string; label: string; required: boolean }[]
-  isDuesPaidFromFinance: boolean
+  gates: GateStatus
   canManage: boolean
-  stageOrder: InductionStage[]
-  onMoveStage?: (prospectId: string, nextStage: InductionStage) => void
+  onUpdateProspect: (id: string, patch: Partial<InductionProspect>) => void
 }) {
-  const currentIndex = stageOrder.indexOf(prospect.stage)
-  const nextStage = currentIndex < stageOrder.length - 1 ? stageOrder[currentIndex + 1] : null
-  const nextStageLabel = nextStage && INDUCTION_STAGES.find((s) => s.id === nextStage)?.label
+  const count = prospect.participationCount ?? 0
+  const participationMet = count >= REQUIRED_PARTICIPATION_MEETINGS
 
   return (
-    <li className="rounded-lg border p-2 text-sm" style={{ borderColor: "var(--border)" }}>
+    <li className="rounded-lg border p-2.5 text-sm" style={{ borderColor: "var(--border)" }}>
       <p className="font-medium" style={{ color: "var(--primary)" }}>
         {prospect.name}
       </p>
-      <p className="text-xs truncate" style={{ color: "var(--muted-foreground)" }}>
+      <p className="text-xs truncate mb-2" style={{ color: "var(--muted-foreground)" }}>
         {prospect.email}
       </p>
-      {stageChecklist.length > 0 && (
-        <ul className="mt-2 space-y-0.5 text-xs">
-          {stageChecklist.map((item) => {
-            const done = prospect.checklistCompleted[item.key]
-            return (
-              <li key={item.key} className="flex items-center gap-1.5">
-                {done ? (
-                  <span className="text-emerald-600" aria-hidden>✓</span>
-                ) : (
-                  <span className="text-muted-foreground" aria-hidden>○</span>
-                )}
-                {item.label}
-                {item.key === "dues_received" && isDuesPaidFromFinance && (
-                  <Badge variant="secondary" className="text-[10px] ml-1">Finance</Badge>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-      {canManage && nextStage && nextStageLabel && onMoveStage && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-2 w-full text-xs"
-          onClick={() => onMoveStage(prospect.id, nextStage)}
-        >
-          Move to {nextStageLabel}
-        </Button>
+      <ul className="grid grid-cols-1 gap-1.5 text-xs">
+        <li>
+          <GateIndicator
+            complete={gates.finance}
+            label="Dues paid"
+            pendingLabel="Awaiting dues"
+          />
+        </li>
+        <li>
+          {canManage ? (
+            <span className="inline-flex items-center gap-1.5 flex-wrap">
+              {participationMet ? (
+                <Check className="size-3.5 text-emerald-600 shrink-0" />
+              ) : (
+                <span className="size-3.5 rounded-full border shrink-0" style={{ borderColor: "var(--muted-foreground)", backgroundColor: "var(--muted)" }} />
+              )}
+              <span style={{ color: participationMet ? "var(--foreground)" : "var(--muted-foreground)" }}>
+                Participation: {count}/{REQUIRED_PARTICIPATION_MEETINGS}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-xs"
+                onClick={() => onUpdateProspect(prospect.id, { participationCount: count + 1 })}
+              >
+                +1
+              </Button>
+            </span>
+          ) : (
+            <GateIndicator
+              complete={participationMet}
+              label="Participation met"
+              pendingLabel="Needs more meetings"
+            />
+          )}
+        </li>
+        <li>
+          {canManage ? (
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={gates.orientation}
+                onCheckedChange={(checked) =>
+                  onUpdateProspect(prospect.id, { orientationVerified: checked })
+                }
+              />
+              <span style={{ color: gates.orientation ? "var(--foreground)" : "var(--muted-foreground)" }}>
+                {gates.orientation ? "Orientation complete" : "Orientation pending"}
+              </span>
+            </label>
+          ) : (
+            <GateIndicator
+              complete={gates.orientation}
+              label="Orientation complete"
+              pendingLabel="Orientation pending"
+            />
+          )}
+        </li>
+        <li>
+          {canManage ? (
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <Switch
+                checked={gates.profile}
+                onCheckedChange={(checked) =>
+                  onUpdateProspect(prospect.id, { profileComplete: checked })
+                }
+              />
+              <span style={{ color: gates.profile ? "var(--foreground)" : "var(--muted-foreground)" }}>
+                {gates.profile ? "Profile complete" : "Profile incomplete"}
+              </span>
+            </label>
+          ) : (
+            <GateIndicator
+              complete={gates.profile}
+              label="Profile complete"
+              pendingLabel="Profile incomplete"
+            />
+          )}
+        </li>
+      </ul>
+      {prospect.stage === "inducted" && prospect.inductionClass && (
+        <p className="text-xs mt-2 pt-2 border-t" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+          {prospect.inductionClass}
+          {prospect.inductionDate && ` · ${formatDate(prospect.inductionDate)}`}
+        </p>
       )}
     </li>
   )
