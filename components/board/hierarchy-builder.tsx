@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
 import { Plus, ChevronDown, ChevronRight } from "lucide-react"
 import type { BoardPosition } from "@/types"
 import { APP_MODULES } from "@/lib/app-modules"
@@ -130,11 +131,19 @@ export function HierarchyBuilder({
                     className="ml-6"
                   />
                 )}
-                {hasChildren && !isCollapsed && (
-                  <div className="border-l border-border/60 pl-3 ml-2">
-                    {renderTreeNode(position.id, level + 1)}
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {hasChildren && !isCollapsed && (
+                    <motion.div
+                      className="border-l border-border/60 pl-3 ml-2 overflow-hidden"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+                    >
+                      {renderTreeNode(position.id, level + 1)}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </li>
           )

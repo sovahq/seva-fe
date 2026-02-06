@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
 import { useAuth } from "@/context/AuthContext"
 import { mockBoardPositions, mockBoardAssignments } from "@/data/mock"
 import {
@@ -94,34 +95,68 @@ export default function BoardPage() {
       </nav>
 
       <div className="mt-6">
-        {activeTab === "hierarchy" && (
-          <HierarchyBuilder
-            positions={positions}
-            onPositionsChange={setPositions}
-            organizationId={orgId}
-            disabled={!canEdit}
-          />
-        )}
-        {activeTab === "permissions" && (
-          <PermissionsMatrix
-            positions={positions}
-            onPositionsChange={setPositions}
-            disabled={!canEdit}
-          />
-        )}
-        {activeTab === "assignments" && (
-          <MemberAssignment
-            positions={positions}
-            assignments={assignments}
-            onAssignmentsChange={setAssignments}
-            users={availableUsers}
-            organizationId={orgId}
-            disabled={!canEdit}
-          />
-        )}
-        {activeTab === "preview" && (
-          <AccessPreview positions={positions} disabled={!canEdit} />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {activeTab === "hierarchy" && (
+            <motion.div
+              key="hierarchy"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <HierarchyBuilder
+                positions={positions}
+                onPositionsChange={setPositions}
+                organizationId={orgId}
+                disabled={!canEdit}
+              />
+            </motion.div>
+          )}
+          {activeTab === "permissions" && (
+            <motion.div
+              key="permissions"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <PermissionsMatrix
+                positions={positions}
+                onPositionsChange={setPositions}
+                disabled={!canEdit}
+              />
+            </motion.div>
+          )}
+          {activeTab === "assignments" && (
+            <motion.div
+              key="assignments"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <MemberAssignment
+                positions={positions}
+                assignments={assignments}
+                onAssignmentsChange={setAssignments}
+                users={availableUsers}
+                organizationId={orgId}
+                disabled={!canEdit}
+              />
+            </motion.div>
+          )}
+          {activeTab === "preview" && (
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <AccessPreview positions={positions} disabled={!canEdit} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

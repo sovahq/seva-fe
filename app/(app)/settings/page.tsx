@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
 import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -81,16 +82,54 @@ export default function SettingsPage() {
         </nav>
 
         <div className="min-w-0 flex-1">
-          {activeTab === "general" && (
-            <GeneralTab organization={currentOrganization} />
-          )}
-          {activeTab === "modules" && <ModulesTab />}
-          {activeTab === "branding" && <BrandingTab />}
-          {activeTab === "data" && (
-            <DataManagementTab
-              onHandoverClick={() => setHandoverDialogOpen(true)}
-            />
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            {activeTab === "general" && (
+              <motion.div
+                key="general"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <GeneralTab organization={currentOrganization} />
+              </motion.div>
+            )}
+            {activeTab === "modules" && (
+              <motion.div
+                key="modules"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <ModulesTab />
+              </motion.div>
+            )}
+            {activeTab === "branding" && (
+              <motion.div
+                key="branding"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <BrandingTab />
+              </motion.div>
+            )}
+            {activeTab === "data" && (
+              <motion.div
+                key="data"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <DataManagementTab
+                  onHandoverClick={() => setHandoverDialogOpen(true)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

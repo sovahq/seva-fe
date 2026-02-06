@@ -6,6 +6,7 @@ const ROLE_ACCESS: Record<UserRole, Resource[]> = {
   admin: ["governance", "membership", "financial", "projects"],
   board: ["governance", "membership", "financial", "projects"],
   member: ["membership", "projects"],
+  finance: ["governance", "membership", "financial", "projects"],
 }
 
 /** President (admin) always has full access regardless of position. */
@@ -15,6 +16,7 @@ export function getAccessLevel(
   position: BoardPosition | null
 ): AccessLevel {
   if (role === "admin") return "manage"
+  if (role === "finance" && resource === "financial") return "manage"
   if (!position) {
     const hasAccess = ROLE_ACCESS[role]?.includes(resource) ?? false
     return hasAccess ? "view" : "none"

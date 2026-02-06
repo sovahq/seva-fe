@@ -17,4 +17,12 @@ export const mockUsers: User[] = [
     password: "password",
     organizationId: "org-demo",
   },
+  {
+    id: "user-finance",
+    name: "Director of Finance",
+    email: "finance@jcieko.org",
+    role: "finance",
+    password: "password",
+    organizationId: "org-jci-eko",
+  },
 ]
