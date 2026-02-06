@@ -28,6 +28,15 @@ export interface Member {
   organizationId: string
   name: string
   role?: string
+  /** Email (sensitive: only for authorized board) */
+  email?: string
+  /** Phone (sensitive: only for authorized board) */
+  phone?: string
+  /** Professional skills for tagging and search */
+  skills?: string[]
+  joinDate?: string
+  /** Committee or board position IDs/names */
+  committeeAssignments?: string[]
 }
 
 export interface Event {
@@ -35,6 +44,45 @@ export interface Event {
   organizationId: string
   name: string
   date: string
+  type?: "meeting" | "event"
+}
+
+/** One attendance record: member attended an event */
+export interface AttendanceRecord {
+  id: string
+  organizationId: string
+  eventId: string
+  memberId: string
+  recordedAt: string
+}
+
+/** Member engagement health based on recent attendance */
+export type MemberHealthStatus = "active" | "at_risk" | "inactive"
+
+/** Stage in the induction pipeline */
+export type InductionStage = "prospect" | "orientation" | "dues_paid" | "inducted"
+
+/** Checklist item key per stage (e.g. "orientation_completed", "dues_received") */
+export interface InductionChecklistItem {
+  stage: InductionStage
+  key: string
+  label: string
+  required: boolean
+}
+
+/** Prospect or new recruit moving through induction */
+export interface InductionProspect {
+  id: string
+  organizationId: string
+  name: string
+  email: string
+  stage: InductionStage
+  /** Checklist key -> completed */
+  checklistCompleted: Record<string, boolean>
+  stageMovedAt: string
+  createdAt: string
+  /** When inducted, link to new member id */
+  memberId?: string
 }
 
 export interface Organization {

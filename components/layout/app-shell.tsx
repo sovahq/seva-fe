@@ -19,7 +19,7 @@ function primaryNavItems(
 ): { to: string; label: string; resource: Resource }[] {
   return [
     { to: paths.home, label: "Dashboard", resource: "membership" },
-    { to: paths.members, label: "Members", resource: "membership" },
+    { to: paths.members, label: "Member Relations", resource: "membership" },
     { to: paths.events, label: "Events", resource: "projects" },
     { to: paths.finance, label: "Finance", resource: "financial" },
   ]
