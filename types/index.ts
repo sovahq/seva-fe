@@ -47,3 +47,30 @@ export interface Organization {
   presidentEmail: string
   primaryCurrency: PrimaryCurrency
 }
+
+/** Level of access a position has for a given app module */
+export type AccessLevel = "none" | "view" | "manage"
+
+/** App module that can be gated by position (e.g. Membership, Finance). IDs match Resource in permissions. */
+export interface AppModule {
+  id: string
+  label: string
+}
+
+/** Board position with optional parent and per-module access */
+export interface BoardPosition {
+  id: string
+  organizationId: string
+  name: string
+  reportsToId: string | null
+  moduleAccess: Record<string, AccessLevel>
+}
+
+/** Links a user (by id) or pending invite (by email) to a board position */
+export interface BoardPositionAssignment {
+  id: string
+  organizationId: string
+  positionId: string
+  userId: string | null
+  email: string | null
+}

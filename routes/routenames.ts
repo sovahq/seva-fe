@@ -7,4 +7,5 @@ export const ROUTES = {
   EVENTS: "/events",
   FINANCE: "/finance",
   BOARD: "/board",
+  SETTINGS: "/settings",
 } as const
