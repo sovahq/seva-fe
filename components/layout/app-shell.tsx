@@ -180,20 +180,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {item.label}
           </Link>
         ))}
-        {canAccess(currentUser.role, "membership") && (
-          <Link
-            href={ROUTES.ONBOARDING}
-            className={cn(
-              "rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
-              pathname === ROUTES.ONBOARDING && "bg-primary/15"
-            )}
-            style={{
-              color: pathname === ROUTES.ONBOARDING ? "var(--primary)" : "rgba(0,45,91,0.8)",
-            }}
-          >
-            Onboarding
-          </Link>
-        )}
+        <Link
+          href={ROUTES.SETTINGS}
+          className={cn(
+            "rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
+            pathname === ROUTES.SETTINGS && "bg-primary/15"
+          )}
+          style={{
+            color: pathname === ROUTES.SETTINGS ? "var(--primary)" : "rgba(0,45,91,0.8)",
+          }}
+        >
+          Settings
+        </Link>
       </nav>
     </div>
   )

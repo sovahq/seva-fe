@@ -13,6 +13,7 @@ const APP_ROUTE_PREFIXES = [
   ROUTES.EVENTS,
   ROUTES.FINANCE,
   ROUTES.BOARD,
+  ROUTES.SETTINGS,
 ] as const
 
 export function SiteHeader() {
