@@ -3,7 +3,18 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { ChevronUp } from "lucide-react"
+import {
+  ChevronUp,
+  LayoutDashboard,
+  Users,
+  Calendar,
+  Wallet,
+  FileText,
+  LayoutList,
+  Settings,
+  User,
+  LogOut,
+} from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 import { useViewAs } from "@/context/ViewAsContext"
 import { canAccess, type Resource } from "@/lib/permissions"
@@ -13,26 +24,39 @@ import { useAppPaths } from "@/hooks/useAppPaths"
 import { SevaLogo } from "@/components/branding"
 import { Button } from "@/components/ui/button"
 
+const PRIMARY_ICONS = {
+  home: LayoutDashboard,
+  members: Users,
+  events: Calendar,
+  finance: Wallet,
+} as const
+
+const NESTED_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  governance: FileText,
+  board: LayoutList,
+  settings: Settings,
+}
+
 /** Primary items shown as direct links in the bottom nav */
 function primaryNavItems(
   paths: ReturnType<typeof useAppPaths>
-): { to: string; label: string; resource: Resource }[] {
+): { to: string; label: string; resource: Resource; iconKey: keyof typeof PRIMARY_ICONS }[] {
   return [
-    { to: paths.home, label: "Dashboard", resource: "membership" },
-    { to: paths.members, label: "Member Relations", resource: "membership" },
-    { to: paths.events, label: "Events", resource: "projects" },
-    { to: paths.finance, label: "Finance", resource: "financial" },
+    { to: paths.home, label: "Dashboard", resource: "membership", iconKey: "home" },
+    { to: paths.members, label: "Member Relations", resource: "membership", iconKey: "members" },
+    { to: paths.events, label: "Events", resource: "projects", iconKey: "events" },
+    { to: paths.finance, label: "Finance", resource: "financial", iconKey: "finance" },
   ]
 }
 
 /** Nested items shown inside the "More" popover */
 function nestedNavItems(
   paths: ReturnType<typeof useAppPaths>
-): { to: string; label: string; resource?: Resource }[] {
+): { to: string; label: string; resource?: Resource; iconKey: string }[] {
   return [
-    { to: paths.governance, label: "Governance", resource: "governance" },
-    { to: paths.board, label: "Board", resource: "governance" },
-    { to: ROUTES.SETTINGS, label: "Settings" },
+    { to: paths.governance, label: "Governance", resource: "governance", iconKey: "governance" },
+    { to: paths.board, label: "Board", resource: "governance", iconKey: "board" },
+    { to: ROUTES.SETTINGS, label: "Settings", iconKey: "settings" },
   ]
 }
 
@@ -57,10 +81,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     canAccess(currentUser.role, resource, effectivePosition)
 
   const primaryItems = primaryNavItems(paths)
-  const visiblePrimaryItems = primaryItems.filter((item) => hasAccess(item.resource))
-  const nestedItems = nestedNavItems(paths).filter(
-    (item) => item.resource == null || hasAccess(item.resource)
-  )
+  const visiblePrimaryItems = primaryItems.filter((item) => {
+    if (currentUser.role === "member" && item.to === paths.members) return false
+    return hasAccess(item.resource)
+  })
+  const nestedItems = nestedNavItems(paths).filter((item) => {
+    if (currentUser.role === "member" && item.to === ROUTES.SETTINGS) return false
+    return item.resource == null || hasAccess(item.resource)
+  })
   const moreMenuPaths = nestedItems.map((i) => i.to)
   const isMoreActive = moreMenuPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
@@ -136,6 +164,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     {currentUser.name} · {currentUser.role}
                   </div>
                   <div className="py-1">
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      className="w-full justify-start gap-2 rounded-none px-4 py-2 text-sm"
+                      style={{ color: "rgba(0,45,91,0.9)" }}
+                      asChild
+                    >
+                      <Link href={ROUTES.PROFILE} onClick={() => setUserMenuOpen(false)}>
+                        <User className="size-4 shrink-0" />
+                        Profile
+                      </Link>
+                    </Button>
                     <div
                       className="px-4 py-1 text-xs font-medium uppercase tracking-wider"
                       style={{ color: "var(--muted-foreground)" }}
@@ -168,9 +208,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       variant="ghost"
                       type="button"
                       onClick={handleLogout}
-                      className="w-full justify-start rounded-none px-4 py-2 text-sm"
+                      className="w-full justify-start gap-2 rounded-none px-4 py-2 text-sm"
                       style={{ color: "var(--destructive)" }}
                     >
+                      <LogOut className="size-4 shrink-0" />
                       Log out
                     </Button>
                   </div>
@@ -198,80 +239,90 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
         aria-label="Main navigation"
       >
-        {visiblePrimaryItems.map((item) => (
-          <Link
-            key={item.to}
-            href={item.to}
-            className={cn(
-              "rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
-              isActive(item.to) ? "bg-primary/15" : "hover:bg-primary/10"
-            )}
-            style={{
-              color: isActive(item.to) ? "var(--primary)" : "rgba(0,45,91,0.8)",
-            }}
-          >
-            {item.label}
-          </Link>
-        ))}
-        <div className="relative">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-            className={cn(
-              "rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/10",
-              isMoreActive && "bg-primary/15"
-            )}
-            style={{
-              color: isMoreActive ? "var(--primary)" : "rgba(0,45,91,0.8)",
-            }}
-          >
-            More
-            <ChevronUp
-              className={cn("ml-1 size-3.5 transition-transform", moreMenuOpen && "rotate-180")}
-            />
-          </Button>
-          {moreMenuOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                aria-hidden
-                onClick={() => setMoreMenuOpen(false)}
+        {visiblePrimaryItems.map((item) => {
+          const Icon = PRIMARY_ICONS[item.iconKey]
+          return (
+            <Link
+              key={item.to}
+              href={item.to}
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
+                isActive(item.to) ? "bg-primary/15" : "hover:bg-primary/10"
+              )}
+              style={{
+                color: isActive(item.to) ? "var(--primary)" : "rgba(0,45,91,0.8)",
+              }}
+            >
+              <Icon className="size-4 shrink-0" />
+              {item.label}
+            </Link>
+          )
+        })}
+        {nestedItems.length > 0 && (
+          <div className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+              className={cn(
+                "rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/10",
+                isMoreActive && "bg-primary/15"
+              )}
+              style={{
+                color: isMoreActive ? "var(--primary)" : "rgba(0,45,91,0.8)",
+              }}
+            >
+              More
+              <ChevronUp
+                className={cn("ml-1 size-3.5 transition-transform", moreMenuOpen && "rotate-180")}
               />
-              <div
-                className="absolute bottom-full left-1/2 z-20 mb-2 w-48 -translate-x-1/2 rounded-xl border py-1 shadow-lg backdrop-blur-md"
-                style={{
-                  borderColor: "rgba(0,45,91,0.15)",
-                  backgroundColor: "rgba(255,255,255,0.98)",
-                }}
-                role="menu"
-              >
-                {nestedItems.map((item) => (
-                  <Link
-                    key={item.to}
-                    href={item.to}
-                    onClick={() => setMoreMenuOpen(false)}
-                    role="menuitem"
-                    className={cn(
-                      "block px-4 py-2.5 text-sm font-medium transition-colors",
-                      (pathname === item.to || pathname.startsWith(item.to + "/"))
-                        ? "bg-primary/10"
-                        : "hover:bg-primary/5"
-                    )}
-                    style={{
-                      color:
-                        pathname === item.to || pathname.startsWith(item.to + "/")
-                          ? "var(--primary)"
-                          : "rgba(0,45,91,0.9)",
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+            </Button>
+            {moreMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  aria-hidden
+                  onClick={() => setMoreMenuOpen(false)}
+                />
+                <div
+                  className="absolute bottom-full left-1/2 z-20 mb-2 w-48 -translate-x-1/2 rounded-xl border py-1 shadow-lg backdrop-blur-md"
+                  style={{
+                    borderColor: "rgba(0,45,91,0.15)",
+                    backgroundColor: "rgba(255,255,255,0.98)",
+                  }}
+                  role="menu"
+                >
+                  {nestedItems.map((item) => {
+                    const Icon = NESTED_ICONS[item.iconKey]
+                    return (
+                      <Link
+                        key={item.to}
+                        href={item.to}
+                        onClick={() => setMoreMenuOpen(false)}
+                        role="menuitem"
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                          (pathname === item.to || pathname.startsWith(item.to + "/"))
+                            ? "bg-primary/10"
+                            : "hover:bg-primary/5"
+                        )}
+                        style={{
+                          color:
+                            pathname === item.to || pathname.startsWith(item.to + "/")
+                              ? "var(--primary)"
+                              : "rgba(0,45,91,0.9)",
+                        }}
+                      >
+                        {Icon && <Icon className="size-4 shrink-0" />}
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </nav>
     </div>
   )

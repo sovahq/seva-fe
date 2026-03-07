@@ -20,7 +20,7 @@ const variants = {
 
 const transition = {
   duration: 0.25,
-  ease: [0.25, 0.46, 0.45, 0.94],
+  ease: [0.25, 0.46, 0.45, 0.94] as const,
 }
 
 export function PageTransition({ children }: { children: React.ReactNode }) {

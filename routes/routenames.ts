@@ -5,7 +5,9 @@ export const ROUTES = {
   GOVERNANCE: "/governance",
   MEMBERS: "/members",
   EVENTS: "/events",
+  EVENTS_NEW: "/events/new",
   FINANCE: "/finance",
   BOARD: "/board",
   SETTINGS: "/settings",
+  PROFILE: "/profile",
 } as const

@@ -13,9 +13,9 @@ import {
   mockGovernanceDocuments,
   mockFinancialSummaries,
   mockMembers,
-  mockEvents,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
+import { useEvents } from "@/context/EventsContext"
 import { PillarCard } from "@/components/cards"
 import { ROUTES } from "@/routes/routenames"
 
@@ -29,6 +29,7 @@ function formatCurrency(amount: number): string {
 
 export function DashboardContent() {
   const { currentOrganizationId } = useAuth()
+  const { events: allEvents } = useEvents()
 
   const documents = mockGovernanceDocuments
     .filter((d) => d.organizationId === currentOrganizationId)
@@ -45,10 +46,10 @@ export function DashboardContent() {
     (m) => m.organizationId === currentOrganizationId
   ).length
 
-  const events = mockEvents
+  const events = allEvents
     .filter((e) => e.organizationId === currentOrganizationId)
     .slice(0, 3)
-  const eventCount = mockEvents.filter(
+  const eventCount = allEvents.filter(
     (e) => e.organizationId === currentOrganizationId
   ).length
   const overviewChartData = [
@@ -86,7 +87,7 @@ export function DashboardContent() {
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
             <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} allowDecimals={false} />
             <Tooltip
-              formatter={(value: number, name: string, props: { payload: { fullLabel: string } }) => [props.payload.fullLabel, name]}
+              formatter={(value, name, props) => [props?.payload?.fullLabel ?? String(value), name ?? ""]}
               contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }}
               labelStyle={{ color: "var(--primary)" }}
             />

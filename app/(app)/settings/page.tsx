@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import { useAuth } from "@/context/AuthContext"
+import { ROUTES } from "@/routes/routenames"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,9 +39,20 @@ const TABS: { id: SettingsTab; label: string }[] = [
 ]
 
 export default function SettingsPage() {
-  const { currentOrganization } = useAuth()
+  const router = useRouter()
+  const { currentOrganization, currentUser } = useAuth()
   const [activeTab, setActiveTab] = useState<SettingsTab>("general")
   const [handoverDialogOpen, setHandoverDialogOpen] = useState(false)
+
+  useEffect(() => {
+    if (currentUser?.role === "member") {
+      router.replace(ROUTES.DASHBOARD)
+    }
+  }, [currentUser?.role, router])
+
+  if (currentUser?.role === "member") {
+    return null
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-6">

@@ -1,18 +1,19 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import {
   mockMembers,
-  mockEvents,
-  mockAttendanceRecords,
   mockInductionProspects,
   mockMemberDues,
   INDUCTION_CHECKLIST,
   REQUIRED_PARTICIPATION_MEETINGS,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
+import { useEvents } from "@/context/EventsContext"
 import { canManage } from "@/lib/permissions"
+import { ROUTES } from "@/routes/routenames"
 import {
   getLastAttendanceDate,
   getMemberHealthStatus,
@@ -127,9 +128,17 @@ function healthLabel(s: MemberHealthStatus): string {
 }
 
 export default function MembersPage() {
+  const router = useRouter()
   const { currentOrganizationId, currentUser } = useAuth()
+  const { events, attendance, addAttendanceRecord } = useEvents()
   const orgId = currentOrganizationId ?? ""
   const canManageMembership = currentUser ? canManage(currentUser.role, "membership") : false
+
+  useEffect(() => {
+    if (currentUser?.role === "member") {
+      router.replace(ROUTES.DASHBOARD)
+    }
+  }, [currentUser?.role, router])
 
   const [activeTab, setActiveTab] = useState<MembersTab>("directory")
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
@@ -146,13 +155,13 @@ export default function MembersPage() {
     () => mockMembers.filter((m) => m.organizationId === orgId && !m.id.startsWith("m-demo")),
     [orgId]
   )
-  const events = useMemo(
-    () => mockEvents.filter((e) => e.organizationId === orgId),
-    [orgId]
+  const orgEvents = useMemo(
+    () => events.filter((e) => e.organizationId === orgId),
+    [events, orgId]
   )
-  const attendance = useMemo(
-    () => mockAttendanceRecords.filter((a) => a.organizationId === orgId),
-    [orgId]
+  const orgAttendance = useMemo(
+    () => attendance.filter((a) => a.organizationId === orgId),
+    [attendance, orgId]
   )
   const dues = useMemo(
     () => mockMemberDues.filter((d) => d.organizationId === orgId),
@@ -164,6 +173,10 @@ export default function MembersPage() {
     { id: "engagement", label: "Engagement", icon: <CalendarCheck className="size-4" /> },
     { id: "induction", label: "Induction", icon: <Kanban className="size-4" /> },
   ]
+
+  if (currentUser?.role === "member") {
+    return null
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
@@ -230,8 +243,9 @@ export default function MembersPage() {
             >
               <EngagementTab
                 members={members}
-                events={events}
-                attendance={attendance}
+                events={orgEvents}
+                attendance={orgAttendance}
+                addAttendanceRecord={addAttendanceRecord}
                 canManageMembership={canManageMembership}
               />
             </motion.div>
@@ -461,11 +475,13 @@ function EngagementTab({
   events,
   attendance,
   canManageMembership,
+  addAttendanceRecord,
 }: {
   members: Member[]
   events: Event[]
   attendance: AttendanceRecord[]
   canManageMembership: boolean
+  addAttendanceRecord: (record: AttendanceRecord) => void
 }) {
   const [selectedEventId, setSelectedEventId] = useState<string>("")
   const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
@@ -512,14 +528,16 @@ function EngagementTab({
   function saveAttendance() {
     if (!selectedEventId) return
     const now = new Date().toISOString()
+    const orgId = members[0]?.organizationId ?? ""
     const newRecords: AttendanceRecord[] = Array.from(presentIds).map((memberId, i) => ({
       id: `local-att-${Date.now()}-${i}`,
-      organizationId: members[0]?.organizationId ?? "",
+      organizationId: orgId,
       eventId: selectedEventId,
       memberId,
       recordedAt: now,
     }))
-    setLocalAttendance((prev) => [...prev, ...newRecords])
+    newRecords.forEach(addAttendanceRecord)
+    setLocalAttendance([])
     setPresentIds(new Set())
     setSaved(true)
   }

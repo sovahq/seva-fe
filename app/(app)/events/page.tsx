@@ -1,27 +1,44 @@
 "use client"
 
 import Link from "next/link"
-import { mockEvents } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
+import { useEvents } from "@/context/EventsContext"
+import { canManage } from "@/lib/permissions"
 import { ROUTES } from "@/routes/routenames"
+import { CalendarPlus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function EventsPage() {
-  const { currentOrganizationId } = useAuth()
-  const events = mockEvents.filter((e) => e.organizationId === currentOrganizationId)
+  const { currentOrganizationId, currentUser } = useAuth()
+  const { events } = useEvents()
+  const orgEvents = events.filter((e) => e.organizationId === currentOrganizationId)
+  const canManageEvents = currentUser ? canManage(currentUser.role, "projects") : false
 
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <h1 className="text-2xl font-semibold" style={{ color: "var(--primary)" }}>
-        Events
-      </h1>
-      <p className="mt-1" style={{ color: "var(--muted-foreground)" }}>
-        Upcoming and past events.
-      </p>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold" style={{ color: "var(--primary)" }}>
+            Events
+          </h1>
+          <p className="mt-1" style={{ color: "var(--muted-foreground)" }}>
+            Upcoming and past events.
+          </p>
+        </div>
+        {canManageEvents && (
+          <Button asChild className="gap-2">
+            <Link href={ROUTES.EVENTS_NEW}>
+              <CalendarPlus className="size-4" />
+              Create meeting
+            </Link>
+          </Button>
+        )}
+      </div>
       <ul className="mt-6 list-none space-y-2">
-        {events.length === 0 ? (
+        {orgEvents.length === 0 ? (
           <li style={{ color: "var(--muted-foreground)" }}>No upcoming events.</li>
         ) : (
-          events.map((evt) => (
+          orgEvents.map((evt) => (
             <li key={evt.id}>
               <Link
                 href={`${ROUTES.EVENTS}/${evt.id}`}
@@ -32,6 +49,7 @@ export default function EventsPage() {
               </Link>
               <span className="ml-2" style={{ color: "var(--muted-foreground)" }}>
                 {evt.date}
+                {evt.startTime ? ` · ${new Date(evt.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}` : ""}
               </span>
             </li>
           ))

@@ -17,6 +17,7 @@ type AuthContextValue = {
   switchUser: (user: User) => void
   addOrganization: (org: Organization) => void
   setOrganization: (id: string | null) => void
+  updateCurrentUser: (updates: Partial<Pick<User, "name" | "email">>) => void
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
@@ -25,11 +26,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null)
   const [organizations, setOrganizations] = React.useState<Organization[]>(mockOrganizations)
   const [currentOrganizationId, setCurrentOrganizationId] = React.useState<string | null>(null)
+  const [userOverrides, setUserOverrides] = React.useState<Record<string, Partial<Pick<User, "name" | "email">>>>({})
 
-  const currentUser = React.useMemo(
-    () => mockUsers.find((u) => u.id === currentUserId) ?? null,
-    [currentUserId]
-  )
+  const currentUser = React.useMemo(() => {
+    const base = mockUsers.find((u) => u.id === currentUserId) ?? null
+    if (!base || !currentUserId) return base
+    const overrides = userOverrides[currentUserId]
+    if (!overrides) return base
+    return { ...base, ...overrides }
+  }, [currentUserId, userOverrides])
+
+  const availableUsers = React.useMemo(() => {
+    return mockUsers.map((u) => {
+      const overrides = userOverrides[u.id]
+      if (!overrides) return u
+      return { ...u, ...overrides }
+    })
+  }, [userOverrides])
+
   const currentOrganization = React.useMemo(
     () => organizations.find((o) => o.id === currentOrganizationId) ?? null,
     [organizations, currentOrganizationId]
@@ -56,10 +70,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentOrganizationId(id)
   }, [])
 
+  const updateCurrentUser = React.useCallback((updates: Partial<Pick<User, "name" | "email">>) => {
+    if (!currentUserId) return
+    setUserOverrides((prev) => ({
+      ...prev,
+      [currentUserId]: { ...prev[currentUserId], ...updates },
+    }))
+  }, [currentUserId])
+
   const value: AuthContextValue = {
     currentUserId,
     currentUser,
-    availableUsers: mockUsers,
+    availableUsers,
     organizations,
     currentOrganizationId,
     currentOrganization,
@@ -68,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     switchUser,
     addOrganization,
     setOrganization,
+    updateCurrentUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

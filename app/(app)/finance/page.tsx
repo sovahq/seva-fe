@@ -409,7 +409,7 @@ function TreasuryDashboard({
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number | undefined) => (value != null ? formatCurrency(value) : "")}
                   contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }}
                   labelStyle={{ color: "var(--primary)" }}
                 />
@@ -456,7 +456,7 @@ function BudgetsTab({
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
               <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
+              <Tooltip formatter={(value: number | undefined) => (value != null ? formatCurrency(value) : "")} contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
               <Legend />
               <Bar dataKey="allocated" name="Allocated" fill="var(--primary)" radius={[4, 4, 0, 0]} />
               <Bar dataKey="spent" name="Spent" fill="var(--primary)" fillOpacity={0.7} radius={[4, 4, 0, 0]} />
@@ -510,7 +510,7 @@ function DuesTab({
   canManage,
 }: {
   dues: MemberDuesEntry[]
-  formatCurrency: (n: number) => string
+  formatCurrency: (n: number, currency?: PrimaryCurrency) => string
   formatDate: (iso: string) => string
   canManage: boolean
 }) {
@@ -629,7 +629,7 @@ function RequestsTab({
   onReturn: (req: ExpenseRequisition, note: string | null) => void
   onFlag: (req: ExpenseRequisition, note: string) => void
   getCategoryRemaining: (id: string | null) => number | null
-  formatCurrency: (n: number) => string
+  formatCurrency: (n: number, currency?: PrimaryCurrency) => string
   formatAuditTime: (iso: string) => string
   statusLabel: (s: ExpenseRequisitionStatus) => string
   auditActionLabel: (a: RequisitionAuditEntry["action"]) => string
@@ -750,7 +750,7 @@ function RequestRow({
   expandedId: string | null
   setExpandedId: (id: string | null) => void
   getCategoryRemaining: (id: string | null) => number | null
-  formatCurrency: (n: number) => string
+  formatCurrency: (n: number, currency?: PrimaryCurrency) => string
   formatAuditTime: (iso: string) => string
   auditActionLabel: (a: RequisitionAuditEntry["action"]) => string
   mode: "finance" | "president" | "readonly"
@@ -965,7 +965,7 @@ function LedgerTab({
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
+                <Tooltip formatter={(value: number | undefined) => (value != null ? formatCurrency(value) : "")} contentStyle={{ borderRadius: 8, border: "1px solid var(--border)" }} labelStyle={{ color: "var(--primary)" }} />
                 <Legend />
                 <Line type="monotone" dataKey="income" name="Income" stroke="var(--primary)" strokeWidth={2} dot={{ r: 4 }} />
                 <Line type="monotone" dataKey="expense" name="Expense" stroke="var(--destructive)" strokeWidth={2} dot={{ r: 4 }} />

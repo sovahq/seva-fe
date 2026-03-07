@@ -1,9 +1,40 @@
 import type { Event } from "@/types"
 
 export const mockEvents: Event[] = [
-  { id: "evt-1", organizationId: "org-jci-eko", name: "Annual General Meeting", date: "2026-03-15", type: "meeting" },
-  { id: "evt-2", organizationId: "org-jci-eko", name: "Leadership Retreat", date: "2026-04-20", type: "event" },
-  { id: "evt-3", organizationId: "org-jci-eko", name: "February Chapter Meeting", date: "2026-02-10", type: "meeting" },
+  {
+    id: "evt-1",
+    organizationId: "org-jci-eko",
+    name: "Annual General Meeting",
+    date: "2026-03-15",
+    type: "meeting",
+    startTime: "2026-03-15T10:00:00",
+    locationType: "physical",
+    address: "JCI Eko Secretariat, 12 Marina Way, Lagos",
+    checkInCode: "AGM202",
+    checkInCodeExpiresAt: "2026-03-15T18:00:00",
+  },
+  {
+    id: "evt-2",
+    organizationId: "org-jci-eko",
+    name: "Leadership Retreat",
+    date: "2026-04-20",
+    type: "event",
+    startTime: "2026-04-20T09:00:00",
+    locationType: "virtual",
+    meetingLink: "https://meet.example.com/retreat",
+  },
+  {
+    id: "evt-3",
+    organizationId: "org-jci-eko",
+    name: "February Chapter Meeting",
+    date: "2026-02-10",
+    type: "meeting",
+    startTime: "2026-02-10T14:00:00",
+    locationType: "virtual",
+    meetingLink: "https://zoom.us/j/123456789",
+    checkInCode: "FEB10",
+    checkInCodeExpiresAt: "2026-02-10T23:59:59",
+  },
   { id: "evt-4", organizationId: "org-jci-eko", name: "January Orientation", date: "2026-01-20", type: "event" },
   { id: "evt-5", organizationId: "org-demo", name: "Q2 Planning", date: "2026-05-01", type: "meeting" },
 ]
