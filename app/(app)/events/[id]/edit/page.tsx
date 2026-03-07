@@ -27,15 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { ArrowLeft, CalendarPlus, ChevronDown, Clock, Save } from "lucide-react"
+import { ArrowLeft, Save } from "lucide-react"
 
 const meetingFormSchema = z
   .object({
@@ -216,50 +208,14 @@ export default function EditMeetingPage() {
                 </Field>
                 <Field>
                   <FieldLabel>Date</FieldLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "max-w-[240px] justify-start text-left font-normal",
-                          !form.watch("date") && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarPlus className="mr-2 size-4 shrink-0" />
-                        {form.watch("date")
-                          ? format(new Date(form.watch("date") + "T12:00:00"), "PPP")
-                          : "Pick a date"}
-                        <ChevronDown className="ml-auto size-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={
-                          form.watch("date")
-                            ? new Date(form.watch("date") + "T12:00:00")
-                            : undefined
-                        }
-                        onSelect={(date) =>
-                          date && form.setValue("date", format(date, "yyyy-MM-dd"), { shouldValidate: true })
-                        }
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Input type="date" {...form.register("date")} className="max-w-[180px]" />
                   {form.formState.errors.date && (
                     <p className="text-sm text-destructive mt-1">{form.formState.errors.date.message}</p>
                   )}
                 </Field>
                 <Field>
                   <FieldLabel>Time</FieldLabel>
-                  <div className="relative max-w-[140px]">
-                    <Clock className="absolute left-3 top-1/2 size-4 shrink-0 -translate-y-1/2 opacity-50" />
-                    <Input
-                      type="time"
-                      {...form.register("time")}
-                      className="pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                    />
-                  </div>
+                  <Input type="time" {...form.register("time")} className="max-w-[140px]" />
                   {form.formState.errors.time && (
                     <p className="text-sm text-destructive mt-1">{form.formState.errors.time.message}</p>
                   )}
@@ -384,48 +340,9 @@ export default function EditMeetingPage() {
                 </Field>
                 <Field>
                   <FieldLabel>Code expires at</FieldLabel>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "max-w-[240px] justify-start text-left font-normal",
-                            !form.watch("codeExpiresDate") && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarPlus className="mr-2 size-4 shrink-0" />
-                          {form.watch("codeExpiresDate")
-                            ? format(new Date(form.watch("codeExpiresDate") + "T12:00:00"), "PPP")
-                            : "Pick expiration date"}
-                          <ChevronDown className="ml-auto size-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            form.watch("codeExpiresDate")
-                              ? new Date(form.watch("codeExpiresDate") + "T12:00:00")
-                              : undefined
-                          }
-                          onSelect={(date) =>
-                            date &&
-                            form.setValue("codeExpiresDate", format(date, "yyyy-MM-dd"), {
-                              shouldValidate: true,
-                            })
-                          }
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <div className="relative max-w-[140px]">
-                      <Clock className="absolute left-3 top-1/2 size-4 shrink-0 -translate-y-1/2 opacity-50" />
-                      <Input
-                        type="time"
-                        {...form.register("codeExpiresTime")}
-                        className="pl-9 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                      />
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Input type="date" {...form.register("codeExpiresDate")} className="max-w-[180px]" />
+                    <Input type="time" {...form.register("codeExpiresTime")} className="max-w-[140px]" />
                   </div>
                   {form.formState.errors.codeExpiresDate && (
                     <p className="text-sm text-destructive mt-1">{form.formState.errors.codeExpiresDate.message}</p>

@@ -9,9 +9,12 @@ import { CalendarPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function EventsPage() {
-  const { currentOrganizationId, currentUser } = useAuth()
+  const { currentOrganizationId, currentUser, organizations } = useAuth()
   const { events } = useEvents()
-  const orgEvents = events.filter((e) => e.organizationId === currentOrganizationId)
+  const effectiveOrgId = currentOrganizationId ?? organizations[0]?.id ?? null
+  const orgEvents = events.filter((e) =>
+    effectiveOrgId !== null ? e.organizationId === effectiveOrgId : !e.organizationId || e.organizationId === ""
+  )
   const canManageEvents = currentUser ? canManage(currentUser.role, "projects") : false
 
   return (

@@ -5,32 +5,9 @@ import { mockEvents } from "@/data/mock/events"
 import { mockAttendanceRecords } from "@/data/mock/attendance"
 import type { Event, AttendanceRecord } from "@/types"
 
-const STORAGE_KEY_EVENTS = "seva-events"
-const STORAGE_KEY_ATTENDANCE = "seva-attendance"
-
-function loadEvents(): Event[] {
-  if (typeof window === "undefined") return mockEvents
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_EVENTS)
-    if (!raw) return mockEvents
-    const parsed = JSON.parse(raw) as Event[]
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : mockEvents
-  } catch {
-    return mockEvents
-  }
-}
-
-function loadAttendance(): AttendanceRecord[] {
-  if (typeof window === "undefined") return mockAttendanceRecords
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ATTENDANCE)
-    if (!raw) return mockAttendanceRecords
-    const parsed = JSON.parse(raw) as AttendanceRecord[]
-    return Array.isArray(parsed) ? parsed : mockAttendanceRecords
-  } catch {
-    return mockAttendanceRecords
-  }
-}
+/** In-memory store so state survives EventsProvider remounts (e.g. Strict Mode or navigation). */
+let eventsStore: Event[] = [...mockEvents]
+let attendanceStore: AttendanceRecord[] = [...mockAttendanceRecords]
 
 type EventsContextValue = {
   events: Event[]
@@ -44,36 +21,31 @@ type EventsContextValue = {
 const EventsContext = React.createContext<EventsContextValue | null>(null)
 
 export function EventsProvider({ children }: { children: React.ReactNode }) {
-  const [events, setEvents] = React.useState<Event[]>(mockEvents)
-  const [attendance, setAttendance] = React.useState<AttendanceRecord[]>(mockAttendanceRecords)
-  const hasLoadedRef = React.useRef(false)
-
-  React.useEffect(() => {
-    setEvents(loadEvents())
-    setAttendance(loadAttendance())
-    hasLoadedRef.current = true
-  }, [])
-
-  React.useEffect(() => {
-    if (!hasLoadedRef.current || typeof window === "undefined") return
-    try {
-      localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(events))
-      localStorage.setItem(STORAGE_KEY_ATTENDANCE, JSON.stringify(attendance))
-    } catch {
-      // ignore quota or parse errors
-    }
-  }, [events, attendance])
+  const [events, setEvents] = React.useState<Event[]>(() => [...eventsStore])
+  const [attendance, setAttendance] = React.useState<AttendanceRecord[]>(() => [...attendanceStore])
 
   const addEvent = React.useCallback((event: Event) => {
-    setEvents((prev) => [...prev, event])
+    setEvents((prev) => {
+      const next = [...prev, event]
+      eventsStore = next
+      return next
+    })
   }, [])
 
   const updateEvent = React.useCallback((id: string, updates: Partial<Event>) => {
-    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)))
+    setEvents((prev) => {
+      const next = prev.map((e) => (e.id === id ? { ...e, ...updates } : e))
+      eventsStore = next
+      return next
+    })
   }, [])
 
   const addAttendanceRecord = React.useCallback((record: AttendanceRecord) => {
-    setAttendance((prev) => [...prev, record])
+    setAttendance((prev) => {
+      const next = [...prev, record]
+      attendanceStore = next
+      return next
+    })
   }, [])
 
   const getAttendanceForEvent = React.useCallback(

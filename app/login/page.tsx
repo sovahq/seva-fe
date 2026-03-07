@@ -11,12 +11,14 @@ import { SevaLogo } from "@/components/branding"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Eye, EyeOff } from "lucide-react"
+import toast from "react-hot-toast"
 
 export default function LoginPage() {
   const { login, organizations, setOrganization } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromOnboarding = searchParams.get("fromOnboarding") === "true"
@@ -24,20 +26,19 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     const trimmedEmail = email.trim().toLowerCase()
     if (!trimmedEmail || !password) {
-      setError("Enter your email and password.")
+      toast.error("Enter your email and password.")
       return
     }
     const user = mockUsers.find((u) => u.email.toLowerCase() === trimmedEmail)
     if (!user) {
-      setError("Invalid email or password.")
+      toast.error("Invalid email or password.")
       return
     }
     const passwordMatch = user.password === undefined || user.password === password
     if (!passwordMatch) {
-      setError("Invalid email or password.")
+      toast.error("Invalid email or password.")
       return
     }
     login(user.id)
@@ -48,6 +49,7 @@ export default function LoginPage() {
         organizations.find((o) => o.id === user.organizationId) ?? organizations[0]
       if (org) setOrganization(org.id)
     }
+    toast.success("Successfully logged in!")
     router.replace(ROUTES.DASHBOARD)
   }
 
@@ -119,34 +121,36 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full px-3"
                 style={{ borderColor: "rgba(0, 45, 91, 0.2)" }}
-                aria-invalid={!!error}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="login-password" style={{ color: "var(--foreground)" }}>
                 Password
               </Label>
-              <Input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 w-full px-3"
-                style={{ borderColor: "rgba(0, 45, 91, 0.2)" }}
-                aria-invalid={!!error}
-              />
+              <div className="relative">
+                <Input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 w-full pl-3 pr-10"
+                  style={{ borderColor: "rgba(0, 45, 91, 0.2)" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-            {error && (
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--destructive)" }}
-                role="alert"
-              >
-                {error}
-              </p>
-            )}
             <Button
               type="submit"
               className="h-11 w-full font-medium"
