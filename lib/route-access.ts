@@ -35,8 +35,11 @@ export function canAccessRoute(
   role: UserRole,
   position: BoardPosition | null
 ): boolean {
-  // Profile is allowed for all authenticated users
+  // Profile and Dues are allowed for all authenticated users
   if (pathname === ROUTES.PROFILE || pathname.startsWith(ROUTES.PROFILE + "/")) {
+    return true
+  }
+  if (pathname === ROUTES.DUES || pathname.startsWith(ROUTES.DUES + "/")) {
     return true
   }
 

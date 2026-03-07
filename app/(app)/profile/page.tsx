@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useAuth } from "@/context/AuthContext"
+import { useDues } from "@/context/DuesContext"
+import { mockMembers } from "@/data/mock"
 import { ROUTES } from "@/routes/routenames"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   Field,
   FieldGroup,
@@ -28,9 +31,29 @@ function roleLabel(role: string): string {
 
 export default function ProfilePage() {
   const { currentUser, currentOrganization, updateCurrentUser } = useAuth()
+  const { memberDues } = useDues()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [saved, setSaved] = useState(false)
+
+  const orgId = currentOrganization?.id ?? ""
+  const adminYear = currentOrganization?.fiscalYear ?? new Date().getFullYear()
+  const member = currentUser
+    ? mockMembers.find(
+        (m) =>
+          m.organizationId === orgId &&
+          m.email?.toLowerCase() === currentUser.email?.toLowerCase()
+      )
+    : null
+  const myDuesEntry = member
+    ? memberDues.find(
+        (d) =>
+          d.organizationId === orgId &&
+          d.administrativeYear === adminYear &&
+          d.memberId === member.id
+      )
+    : null
+  const duesPaid = myDuesEntry?.status === "paid"
 
   useEffect(() => {
     if (currentUser) {
@@ -109,6 +132,26 @@ export default function ProfilePage() {
                     <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
                       {currentOrganization.name}
                     </p>
+                  </Field>
+                )}
+                {member && (
+                  <Field>
+                    <FieldLabel>Dues</FieldLabel>
+                    <FieldDescription>Your dues status for {adminYear}.</FieldDescription>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {duesPaid ? (
+                        <Badge variant="default">Dues paid for {adminYear}</Badge>
+                      ) : (
+                        <Badge variant="secondary">Dues outstanding</Badge>
+                      )}
+                      <Link
+                        href={ROUTES.DUES}
+                        className="text-sm underline"
+                        style={{ color: "var(--primary)" }}
+                      >
+                        {duesPaid ? "View dues" : "Pay Dues"}
+                      </Link>
+                    </div>
                   </Field>
                 )}
               </FieldGroup>

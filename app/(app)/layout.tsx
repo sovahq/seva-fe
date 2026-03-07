@@ -1,17 +1,17 @@
 "use client"
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
-import { RouteGuard } from "@/components/auth/RouteGuard"
 import { AppShell } from "@/components/layout"
+import { DuesProvider } from "@/context/DuesContext"
 import { MeetingsProvider } from "@/context/MeetingsContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <MeetingsProvider>
-        <AppShell>
-          <RouteGuard>{children}</RouteGuard>
-        </AppShell>
+        <DuesProvider>
+          <AppShell>{children}</AppShell>
+        </DuesProvider>
       </MeetingsProvider>
     </ProtectedRoute>
   )

@@ -230,3 +230,38 @@ export interface MemberDuesEntry {
   currency: PrimaryCurrency
   paymentHistory: { at: string; amount: number; note: string | null }[]
 }
+
+/** Dues amount and currency configured per org per administrative year */
+export interface DuesConfig {
+  organizationId: string
+  administrativeYear: number
+  amount: number
+  currency: PrimaryCurrency
+}
+
+/** Local organisation bank details for members to pay dues into */
+export interface OrganizationBankDetails {
+  organizationId: string
+  accountName: string
+  bankName: string
+  accountNumber: string
+  sortCode?: string
+}
+
+/** Member declares "I have paid" and uploads receipt; finance confirms by ticking */
+export type DuesSubmissionStatus = "pending_confirmation" | "confirmed"
+
+export interface DuesSubmission {
+  id: string
+  organizationId: string
+  administrativeYear: number
+  memberId: string
+  memberName: string
+  amount: number
+  currency: PrimaryCurrency
+  receiptUrl: string | null
+  status: DuesSubmissionStatus
+  submittedAt: string
+  confirmedAt: string | null
+  confirmedBy: string | null
+}

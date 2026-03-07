@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   BarChart,
   Bar,
@@ -15,8 +16,12 @@ import {
   mockMembers,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
+import { useDues } from "@/context/DuesContext"
 import { useMeetings } from "@/context/MeetingsContext"
 import { PillarCard } from "@/components/cards"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/routes/routenames"
 
 function formatCurrency(amount: number): string {
@@ -28,8 +33,28 @@ function formatCurrency(amount: number): string {
 }
 
 export function DashboardContent() {
-  const { currentOrganizationId } = useAuth()
+  const { currentOrganizationId, currentUser, currentOrganization } = useAuth()
+  const { memberDues } = useDues()
   const { meetings: allMeetings } = useMeetings()
+
+  const orgId = currentOrganizationId ?? ""
+  const adminYear = currentOrganization?.fiscalYear ?? new Date().getFullYear()
+  const member = currentUser
+    ? mockMembers.find(
+        (m) =>
+          m.organizationId === orgId &&
+          m.email?.toLowerCase() === currentUser.email?.toLowerCase()
+      )
+    : null
+  const myDuesEntry = member
+    ? memberDues.find(
+        (d) =>
+          d.organizationId === orgId &&
+          d.administrativeYear === adminYear &&
+          d.memberId === member.id
+      )
+    : null
+  const duesPaid = myDuesEntry?.status === "paid"
 
   const documents = mockGovernanceDocuments
     .filter((d) => d.organizationId === currentOrganizationId)
@@ -95,6 +120,39 @@ export function DashboardContent() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      {currentUser?.role === "member" && member && (
+        <Card className="mt-6 border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-medium text-sm" style={{ color: "var(--primary)" }}>
+                Dues for {adminYear}
+              </p>
+              {duesPaid ? (
+                <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                  You&apos;ve paid dues for this year.
+                </p>
+              ) : (
+                <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
+                  Pay your dues and upload your receipt.
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {duesPaid ? (
+                <Badge variant="default">Dues paid</Badge>
+              ) : (
+                <Button asChild size="sm">
+                  <Link href={ROUTES.DUES}>Pay Dues</Link>
+                </Button>
+              )}
+              <Button asChild variant="ghost" size="sm">
+                <Link href={ROUTES.DUES}>{duesPaid ? "View dues" : "Go to dues"}</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <PillarCard title="Executive Governance" to={ROUTES.GOVERNANCE}>
           {documents.length === 0 ? (

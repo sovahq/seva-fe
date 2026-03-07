@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { SevaLogo } from "@/components/branding"
 import { ROUTES } from "@/routes/routenames"
 
-const HIDE_HEADER_PATHS = [ROUTES.ONBOARDING, ROUTES.LOGIN] as const
+const HIDE_HEADER_PATHS = [ROUTES.ONBOARDING, ROUTES.LOGIN, ROUTES.UNAUTHORIZED] as const
 const APP_ROUTE_PREFIXES = [
   ROUTES.DASHBOARD,
   ROUTES.GOVERNANCE,

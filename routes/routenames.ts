@@ -10,4 +10,6 @@ export const ROUTES = {
   BOARD: "/board",
   SETTINGS: "/settings",
   PROFILE: "/profile",
+  DUES: "/dues",
+  UNAUTHORIZED: "/unauthorized",
 } as const

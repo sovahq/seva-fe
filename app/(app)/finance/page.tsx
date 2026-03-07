@@ -14,15 +14,15 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { ChevronDown, ChevronRight, FileText } from "lucide-react"
+import { Check, ChevronDown, ChevronRight, FileText } from "lucide-react"
 import {
   mockFinancialSummaries,
   mockExpenseRequisitions,
   mockBudgetCategories,
   mockTransactions,
-  mockMemberDues,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
+import { useDues } from "@/context/DuesContext"
 import { canManage } from "@/lib/permissions"
 import type {
   ExpenseRequisition,
@@ -32,6 +32,7 @@ import type {
   BudgetCategory,
   Transaction,
   MemberDuesEntry,
+  DuesSubmission,
 } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -90,6 +91,7 @@ type FinanceTab = "dashboard" | "budgets" | "dues" | "requests" | "ledger"
 
 export default function FinancePage() {
   const { currentOrganizationId, currentUser, currentOrganization } = useAuth()
+  const { memberDues, duesSubmissions, confirmSubmission } = useDues()
   const orgId = currentOrganizationId ?? ""
   const adminYear = currentOrganization?.fiscalYear ?? new Date().getFullYear()
 
@@ -102,7 +104,10 @@ export default function FinancePage() {
   const financial = mockFinancialSummaries.find((f) => f.organizationId === orgId)
   const budgets = mockBudgetCategories.filter((b) => b.organizationId === orgId && b.administrativeYear === adminYear)
   const transactions = mockTransactions.filter((t) => t.organizationId === orgId && t.administrativeYear === adminYear)
-  const dues = mockMemberDues.filter((d) => d.organizationId === orgId && d.administrativeYear === adminYear)
+  const dues = memberDues.filter((d) => d.organizationId === orgId && d.administrativeYear === adminYear)
+  const pendingSubmissions = duesSubmissions.filter(
+    (s) => s.organizationId === orgId && s.administrativeYear === adminYear && s.status === "pending_confirmation"
+  )
 
   const pendingFinance = requisitions.filter((r) => r.status === "PENDING_FINANCE_REVIEW")
   const pendingPresident = requisitions.filter((r) => r.status === "PENDING_PRESIDENT_APPROVAL")
@@ -261,7 +266,18 @@ export default function FinancePage() {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <DuesTab dues={dues} formatCurrency={formatCurrency} formatDate={formatDate} canManage={canManageFinancial} />
+              <div className="space-y-4">
+                {pendingSubmissions.length > 0 && (
+                  <PendingConfirmationsCard
+                    submissions={pendingSubmissions}
+                    formatCurrency={formatCurrency}
+                    formatDate={formatDate}
+                    canConfirm={canManageFinancial}
+                    onConfirm={(id) => currentUser && confirmSubmission(id, currentUser.id)}
+                  />
+                )}
+                <DuesTab dues={dues} formatCurrency={formatCurrency} formatDate={formatDate} canManage={canManageFinancial} />
+              </div>
             </motion.div>
           )}
           {activeTab === "requests" && (
@@ -500,6 +516,71 @@ function BudgetsTab({
       </CardContent>
     </Card>
     </div>
+  )
+}
+
+function PendingConfirmationsCard({
+  submissions,
+  formatCurrency,
+  formatDate,
+  canConfirm,
+  onConfirm,
+}: {
+  submissions: DuesSubmission[]
+  formatCurrency: (n: number, currency?: PrimaryCurrency) => string
+  formatDate: (iso: string) => string
+  canConfirm: boolean
+  onConfirm: (submissionId: string) => void
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <p className="mb-3 text-sm font-medium" style={{ color: "var(--primary)" }}>
+          Pending confirmations
+        </p>
+        <p className="mb-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
+          Members have submitted payment evidence. Tick to confirm and mark dues as paid.
+        </p>
+        <ul className="divide-y divide-border/60">
+          {submissions.map((s) => (
+            <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0">
+              <div>
+                <p className="font-medium text-sm" style={{ color: "var(--primary)" }}>
+                  {s.memberName}
+                </p>
+                <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                  {formatCurrency(s.amount, s.currency)} · Submitted {formatDate(s.submittedAt)}
+                </p>
+                {s.receiptUrl && (
+                  <a
+                    href={s.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-xs underline"
+                    style={{ color: "var(--primary)" }}
+                  >
+                    <FileText className="size-3" />
+                    View receipt
+                  </a>
+                )}
+              </div>
+              {canConfirm && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="gap-1"
+                  onClick={() => onConfirm(s.id)}
+                  title="Tick to confirm"
+                >
+                  <Check className="size-3.5" />
+                  Confirm
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   )
 }
 

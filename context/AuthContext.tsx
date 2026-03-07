@@ -9,6 +9,8 @@ import type { Organization, User } from "@/types"
 type AuthContextValue = {
   currentUserId: string | null
   currentUser: User | null
+  /** False until cookie rehydration has run (avoids redirecting to login before we've read the cookie). */
+  hasHydrated: boolean
   availableUsers: User[]
   organizations: Organization[]
   currentOrganizationId: string | null
@@ -28,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [organizations, setOrganizations] = React.useState<Organization[]>(mockOrganizations)
   const [currentOrganizationId, setCurrentOrganizationId] = React.useState<string | null>(null)
   const [userOverrides, setUserOverrides] = React.useState<Record<string, Partial<Pick<User, "name" | "email">>>>({})
+  const [hasHydrated, setHasHydrated] = React.useState(false)
 
   const currentUser = React.useMemo(() => {
     const base = mockUsers.find((u) => u.id === currentUserId) ?? null
@@ -50,20 +53,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [organizations, currentOrganizationId]
   )
 
+  const hasHydratedRef = React.useRef(false)
+
   React.useEffect(() => {
     const auth = getAuthCookieFromDocument()
     if (auth) {
       setCurrentUserId(auth.userId)
       setCurrentOrganizationId(auth.organizationId ?? null)
     }
+    hasHydratedRef.current = true
+    setHasHydrated(true)
   }, [])
 
+  React.useEffect(() => {
+    if (!hasHydratedRef.current || !currentUser) return
+    setAuthCookie({
+      userId: currentUser.id,
+      role: currentUser.role,
+      organizationId: currentOrganizationId ?? undefined,
+    })
+  }, [currentUser?.id, currentUser?.role, currentOrganizationId])
+
   const login = React.useCallback((userId: string) => {
-    const user = mockUsers.find((u) => u.id === userId)
     setCurrentUserId(userId)
-    if (user) {
-      setAuthCookie({ userId, role: user.role })
-    }
   }, [])
 
   const logout = React.useCallback(() => {
@@ -80,16 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOrganizations((prev) => (prev.some((o) => o.id === org.id) ? prev : [...prev, org]))
   }, [])
 
-  const setOrganization = React.useCallback(
-    (id: string | null) => {
-      setCurrentOrganizationId(id)
-      const user = mockUsers.find((u) => u.id === currentUserId)
-      if (currentUserId && user) {
-        setAuthCookie({ userId: currentUserId, role: user.role, organizationId: id })
-      }
-    },
-    [currentUserId]
-  )
+  const setOrganization = React.useCallback((id: string | null) => {
+    setCurrentOrganizationId(id)
+  }, [])
 
   const updateCurrentUser = React.useCallback((updates: Partial<Pick<User, "name" | "email">>) => {
     if (!currentUserId) return
@@ -102,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextValue = {
     currentUserId,
     currentUser,
+    hasHydrated,
     availableUsers,
     organizations,
     currentOrganizationId,

@@ -26,14 +26,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useDues } from "@/context/DuesContext"
 import { APP_MODULES } from "@/lib/app-modules"
+import type { PrimaryCurrency } from "@/types"
 import { cn } from "@/lib/utils"
 
-type SettingsTab = "general" | "modules" | "branding" | "data"
+type SettingsTab = "general" | "modules" | "dues" | "branding" | "data"
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "general", label: "General" },
   { id: "modules", label: "Modules" },
+  { id: "dues", label: "Dues & payments" },
   { id: "branding", label: "Branding" },
   { id: "data", label: "Data Management" },
 ]
@@ -116,6 +119,17 @@ export default function SettingsPage() {
                 transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 <ModulesTab />
+              </motion.div>
+            )}
+            {activeTab === "dues" && (
+              <motion.div
+                key="dues"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                <DuesPaymentsTab organization={currentOrganization} />
               </motion.div>
             )}
             {activeTab === "branding" && (
@@ -306,6 +320,142 @@ function ModulesTab() {
         </ul>
         <div className="mt-4">
           <Button type="button">Save changes</Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DuesPaymentsTab({
+  organization,
+}: {
+  organization: { id: string; fiscalYear: number; primaryCurrency?: PrimaryCurrency } | null
+}) {
+  const { getDuesConfig, setDuesConfig, getBankDetails, setBankDetails } = useDues()
+  const orgId = organization?.id ?? ""
+  const year = organization?.fiscalYear ?? new Date().getFullYear()
+  const config = getDuesConfig(orgId, year)
+  const bank = getBankDetails(orgId)
+
+  const [amount, setAmount] = useState(String(config?.amount ?? 0))
+  const [currency, setCurrency] = useState<PrimaryCurrency>(config?.currency ?? "NGN")
+  const [accountName, setAccountName] = useState(bank?.accountName ?? "")
+  const [bankName, setBankName] = useState(bank?.bankName ?? "")
+  const [accountNumber, setAccountNumber] = useState(bank?.accountNumber ?? "")
+  const [sortCode, setSortCode] = useState(bank?.sortCode ?? "")
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (config) {
+      setAmount(String(config.amount))
+      setCurrency(config.currency)
+    }
+  }, [config?.amount, config?.currency])
+  useEffect(() => {
+    if (bank) {
+      setAccountName(bank.accountName)
+      setBankName(bank.bankName)
+      setAccountNumber(bank.accountNumber)
+      setSortCode(bank.sortCode ?? "")
+    }
+  }, [bank?.organizationId])
+
+  function handleSave() {
+    const num = Number.parseInt(amount, 10)
+    if (!Number.isNaN(num) && num >= 0 && orgId) {
+      setDuesConfig(orgId, year, num, currency)
+    }
+    if (orgId && accountName.trim() && bankName.trim() && accountNumber.trim()) {
+      setBankDetails(orgId, {
+        accountName: accountName.trim(),
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        sortCode: sortCode.trim() || undefined,
+      })
+    }
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle style={{ color: "var(--primary)" }}>
+          Dues &amp; payments
+        </CardTitle>
+        <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+          Set the dues amount for the year and the Local Organisation bank details so members know where to pay.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <FieldSet>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>Dues for the year ({year})</FieldLabel>
+              <FieldDescription>
+                Amount and currency members will pay for this administrative year.
+              </FieldDescription>
+              <div className="flex flex-wrap items-center gap-3">
+                <Input
+                  type="number"
+                  min={0}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="max-w-[140px]"
+                />
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value as PrimaryCurrency)}
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="NGN">NGN</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </Field>
+            <Field>
+              <FieldLabel>Local Organisation bank details</FieldLabel>
+              <FieldDescription>
+                Members will pay dues into this account. Show account name, bank name, and account number.
+              </FieldDescription>
+              <div className="space-y-3">
+                <Input
+                  type="text"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Account name"
+                  className="max-w-md"
+                />
+                <Input
+                  type="text"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="Bank name"
+                  className="max-w-md"
+                />
+                <Input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  placeholder="Account number"
+                  className="max-w-md"
+                />
+                <Input
+                  type="text"
+                  value={sortCode}
+                  onChange={(e) => setSortCode(e.target.value)}
+                  placeholder="Sort code / bank code (optional)"
+                  className="max-w-md"
+                />
+              </div>
+            </Field>
+          </FieldGroup>
+        </FieldSet>
+        <div className="mt-4">
+          <Button type="button" onClick={handleSave}>
+            {saved ? "Saved" : "Save changes"}
+          </Button>
         </div>
       </CardContent>
     </Card>
