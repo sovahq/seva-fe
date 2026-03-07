@@ -3,6 +3,7 @@
 import * as React from "react"
 import { mockOrganizations } from "@/data/mock/organizations"
 import { mockUsers } from "@/data/mock/users"
+import { getAuthCookieFromDocument, setAuthCookie, clearAuthCookie } from "@/lib/auth-cookie"
 import type { Organization, User } from "@/types"
 
 type AuthContextValue = {
@@ -49,11 +50,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [organizations, currentOrganizationId]
   )
 
+  React.useEffect(() => {
+    const auth = getAuthCookieFromDocument()
+    if (auth) {
+      setCurrentUserId(auth.userId)
+      setCurrentOrganizationId(auth.organizationId ?? null)
+    }
+  }, [])
+
   const login = React.useCallback((userId: string) => {
+    const user = mockUsers.find((u) => u.id === userId)
     setCurrentUserId(userId)
+    if (user) {
+      setAuthCookie({ userId, role: user.role })
+    }
   }, [])
 
   const logout = React.useCallback(() => {
+    clearAuthCookie()
     setCurrentUserId(null)
     setCurrentOrganizationId(null)
   }, [])
@@ -66,9 +80,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOrganizations((prev) => (prev.some((o) => o.id === org.id) ? prev : [...prev, org]))
   }, [])
 
-  const setOrganization = React.useCallback((id: string | null) => {
-    setCurrentOrganizationId(id)
-  }, [])
+  const setOrganization = React.useCallback(
+    (id: string | null) => {
+      setCurrentOrganizationId(id)
+      const user = mockUsers.find((u) => u.id === currentUserId)
+      if (currentUserId && user) {
+        setAuthCookie({ userId: currentUserId, role: user.role, organizationId: id })
+      }
+    },
+    [currentUserId]
+  )
 
   const updateCurrentUser = React.useCallback((updates: Partial<Pick<User, "name" | "email">>) => {
     if (!currentUserId) return
