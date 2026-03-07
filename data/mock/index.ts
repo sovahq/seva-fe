@@ -1,7 +1,7 @@
 export { mockGovernanceDocuments } from "./governance"
 export { mockFinancialSummaries } from "./finance"
 export { mockMembers } from "./members"
-export { mockEvents } from "./events"
+export { mockMeetings } from "./meetings"
 export { mockUsers } from "./users"
 export { mockOrganizations } from "./organizations"
 export { mockBoardPositions, mockBoardAssignments } from "./board"

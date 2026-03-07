@@ -11,7 +11,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Seva",
-  description: "Manage your Local Organisation — governance, members, events, and finances.",
+  description: "Manage your Local Organisation — governance, members, meetings, and finances.",
 };
 
 export default function RootLayout({

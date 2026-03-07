@@ -39,12 +39,11 @@ export interface Member {
   committeeAssignments?: string[]
 }
 
-export interface Event {
+export interface Meeting {
   id: string
   organizationId: string
   name: string
   date: string
-  type?: "meeting" | "event"
   /** ISO datetime or time string for when the meeting starts */
   startTime?: string
   /** Drives whether meeting link or address is shown */
@@ -61,11 +60,11 @@ export interface Event {
   checkInCodeExpiresAt?: string
 }
 
-/** One attendance record: member attended an event */
+/** One attendance record: member attended a meeting */
 export interface AttendanceRecord {
   id: string
   organizationId: string
-  eventId: string
+  meetingId: string
   memberId: string
   recordedAt: string
 }
@@ -101,7 +100,7 @@ export interface InductionProspect {
   orientationVerified?: boolean
   /** Profile (photo, bio, contact) fully populated */
   profileComplete?: boolean
-  /** Number of meetings/events attended (for participation gate) */
+  /** Number of meetings attended (for participation gate) */
   participationCount?: number
   /** Set when induction ceremony is completed */
   inductionDate?: string

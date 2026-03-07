@@ -1,16 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useMemo, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuth } from "@/context/AuthContext"
-import { useEvents } from "@/context/EventsContext"
+import { useMeetings } from "@/context/MeetingsContext"
 import { generateCheckInCode } from "@/lib/check-in-code"
 import { ROUTES } from "@/routes/routenames"
-import type { Event } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,7 +18,6 @@ import {
   FieldGroup,
   FieldSet,
   FieldLabel,
-  FieldDescription,
 } from "@/components/ui/field"
 import {
   Select,
@@ -28,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ArrowLeft, CalendarPlus } from "lucide-react"
+import { ArrowLeft, Save } from "lucide-react"
 
 const meetingFormSchema = z
   .object({
@@ -58,32 +56,66 @@ const meetingFormSchema = z
 
 type MeetingFormValues = z.infer<typeof meetingFormSchema>
 
-const defaultDate = () => {
-  const d = new Date()
-  return d.toISOString().slice(0, 10)
-}
-const defaultTime = () => {
-  const d = new Date()
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+function parseMeetingToForm(meeting: {
+  name: string
+  date: string
+  startTime?: string
+  locationType?: "virtual" | "physical"
+  meetingLink?: string
+  address?: string
+  checkInCodeExpiresAt?: string
+}): MeetingFormValues {
+  const date = meeting.date
+  let time = "10:00"
+  if (meeting.startTime) {
+    const d = new Date(meeting.startTime)
+    time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  }
+  let codeExpiresDate = date
+  let codeExpiresTime = "23:59"
+  if (meeting.checkInCodeExpiresAt) {
+    const d = new Date(meeting.checkInCodeExpiresAt)
+    codeExpiresDate = d.toISOString().slice(0, 10)
+    codeExpiresTime = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  }
+  return {
+    name: meeting.name,
+    date,
+    time,
+    locationType: meeting.locationType ?? "physical",
+    meetingLink: meeting.meetingLink ?? "",
+    address: meeting.address ?? "",
+    codeExpiresDate,
+    codeExpiresTime,
+  }
 }
 
-export default function NewMeetingPage() {
+export default function EditMeetingPage() {
+  const params = useParams()
   const router = useRouter()
-  const { currentOrganizationId, organizations } = useAuth()
-  const { addEvent } = useEvents()
-  const [checkInCode, setCheckInCode] = useState(() => generateCheckInCode())
-  const [flierUrl, setFlierUrl] = useState<string | null>(null)
+  const id = typeof params.id === "string" ? params.id : ""
+  const { meetings, updateMeeting } = useMeetings()
+
+  const meeting = useMemo(() => meetings.find((m) => m.id === id), [meetings, id])
+  const [checkInCode, setCheckInCode] = useState(() => meeting?.checkInCode ?? generateCheckInCode())
+  const [flierUrl, setFlierUrl] = useState<string | null>(meeting?.flierUrl ?? null)
+
+  useEffect(() => {
+    if (meeting?.checkInCode) setCheckInCode(meeting.checkInCode)
+    if (meeting?.flierUrl) setFlierUrl(meeting.flierUrl)
+  }, [meeting?.id])
 
   const form = useForm<MeetingFormValues>({
     resolver: zodResolver(meetingFormSchema),
+    values: meeting ? parseMeetingToForm(meeting) : undefined,
     defaultValues: {
       name: "",
-      date: defaultDate(),
-      time: defaultTime(),
+      date: "",
+      time: "10:00",
       locationType: "physical",
       meetingLink: "",
       address: "",
-      codeExpiresDate: defaultDate(),
+      codeExpiresDate: "",
       codeExpiresTime: "23:59",
     },
   })
@@ -93,24 +125,22 @@ export default function NewMeetingPage() {
   function handleFlierChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) setFlierUrl(URL.createObjectURL(file))
-    else setFlierUrl(null)
+    else setFlierUrl(meeting?.flierUrl ?? null)
   }
 
   function handleRegenerateCode() {
-    setCheckInCode(generateCheckInCode())
+    const newCode = generateCheckInCode()
+    setCheckInCode(newCode)
   }
 
   function onSubmit(data: MeetingFormValues) {
-    const orgId = currentOrganizationId ?? organizations[0]?.id ?? ""
+    if (!meeting) return
     const startTime = `${data.date}T${data.time}:00`
     const codeExpiresAt = `${data.codeExpiresDate}T${data.codeExpiresTime}:00`
 
-    const evt: Event = {
-      id: `evt-${Date.now()}`,
-      organizationId: orgId,
+    updateMeeting(meeting.id, {
       name: data.name.trim(),
       date: data.date,
-      type: "meeting",
       startTime,
       locationType: data.locationType,
       meetingLink: data.locationType === "virtual" ? data.meetingLink?.trim() : undefined,
@@ -118,28 +148,41 @@ export default function NewMeetingPage() {
       flierUrl: flierUrl ?? undefined,
       checkInCode,
       checkInCodeExpiresAt: codeExpiresAt,
-    }
-    addEvent(evt)
-    router.push(`${ROUTES.EVENTS}/${evt.id}`)
+    })
+    router.push(`${ROUTES.MEETINGS}/${meeting.id}`)
+  }
+
+  if (!meeting) {
+    return (
+      <div className="mx-auto max-w-2xl p-6">
+        <p style={{ color: "var(--muted-foreground)" }}>Meeting not found.</p>
+        <Button variant="link" asChild className="mt-2 gap-1.5 p-0">
+          <Link href={ROUTES.MEETINGS}>
+            <ArrowLeft className="size-4 shrink-0" />
+            Back to meetings
+          </Link>
+        </Button>
+      </div>
+    )
   }
 
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6">
         <Link
-          href={ROUTES.EVENTS}
+          href={`${ROUTES.MEETINGS}/${meeting.id}`}
           className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           style={{ color: "var(--muted-foreground)" }}
         >
           <ArrowLeft className="size-4 shrink-0" />
-          Back to events
+          Back to meeting
         </Link>
       </div>
       <h1 className="text-2xl font-semibold" style={{ color: "var(--primary)" }}>
-        Create meeting
+        Edit meeting
       </h1>
       <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
-        Add name, time, location, and an optional flier. A check-in code will be generated for members.
+        Update details, location, flier, or check-in code expiration.
       </p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
@@ -183,9 +226,6 @@ export default function NewMeetingPage() {
         <Card>
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Location</CardTitle>
-            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Virtual (meeting link) or physical (address).
-            </p>
           </CardHeader>
           <CardContent>
             <FieldSet>
@@ -208,7 +248,6 @@ export default function NewMeetingPage() {
                 {locationType === "virtual" && (
                   <Field>
                     <FieldLabel>Meeting link</FieldLabel>
-                    <FieldDescription>Zoom, Google Meet, or other video call URL.</FieldDescription>
                     <Input
                       {...form.register("meetingLink")}
                       type="url"
@@ -241,9 +280,6 @@ export default function NewMeetingPage() {
         <Card>
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Flier (optional)</CardTitle>
-            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Upload an image or PDF to show on the meeting page.
-            </p>
           </CardHeader>
           <CardContent>
             <FieldSet>
@@ -253,11 +289,7 @@ export default function NewMeetingPage() {
                   <div className="flex flex-wrap items-start gap-4">
                     {flierUrl && (
                       <div className="h-24 min-w-[120px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted/30">
-                        <img
-                          src={flierUrl}
-                          alt="Flier preview"
-                          className="h-full w-full object-contain"
-                        />
+                        <img src={flierUrl} alt="Flier preview" className="h-full w-full object-contain" />
                       </div>
                     )}
                     <div className="flex flex-col gap-2">
@@ -284,7 +316,7 @@ export default function NewMeetingPage() {
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Check-in code</CardTitle>
             <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Share this code at the meeting so members can check in. Set when it expires.
+              Regenerate if needed and set when it expires.
             </p>
           </CardHeader>
           <CardContent>
@@ -306,7 +338,6 @@ export default function NewMeetingPage() {
                 </Field>
                 <Field>
                   <FieldLabel>Code expires at</FieldLabel>
-                  <FieldDescription>After this date and time, the code will no longer work for check-in.</FieldDescription>
                   <div className="flex flex-wrap gap-2">
                     <Input type="date" {...form.register("codeExpiresDate")} className="max-w-[180px]" />
                     <Input type="time" {...form.register("codeExpiresTime")} className="max-w-[140px]" />
@@ -325,11 +356,11 @@ export default function NewMeetingPage() {
 
         <div className="flex gap-3">
           <Button type="submit" className="gap-2">
-            <CalendarPlus className="size-4" />
-            Create meeting
+            <Save className="size-4" />
+            Save changes
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link href={ROUTES.EVENTS}>Cancel</Link>
+            <Link href={`${ROUTES.MEETINGS}/${meeting.id}`}>Cancel</Link>
           </Button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 import type { InductionChecklistItem, InductionProspect } from "@/types"
 
-/** Minimum meetings/events required to pass the participation gate */
+/** Minimum meetings required to pass the participation gate */
 export const REQUIRED_PARTICIPATION_MEETINGS = 2
 
 export const INDUCTION_CHECKLIST: InductionChecklistItem[] = [

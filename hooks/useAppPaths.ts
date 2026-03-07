@@ -5,7 +5,7 @@ export function useAppPaths() {
     home: ROUTES.DASHBOARD,
     governance: ROUTES.GOVERNANCE,
     members: ROUTES.MEMBERS,
-    events: ROUTES.EVENTS,
+    meetings: ROUTES.MEETINGS,
     finance: ROUTES.FINANCE,
     board: ROUTES.BOARD,
   }

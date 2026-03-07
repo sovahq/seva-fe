@@ -11,7 +11,7 @@ import {
   REQUIRED_PARTICIPATION_MEETINGS,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
-import { useEvents } from "@/context/EventsContext"
+import { useMeetings } from "@/context/MeetingsContext"
 import { canManage } from "@/lib/permissions"
 import { ROUTES } from "@/routes/routenames"
 import {
@@ -20,7 +20,7 @@ import {
 } from "@/lib/member-engagement"
 import type {
   Member,
-  Event,
+  Meeting,
   AttendanceRecord,
   InductionProspect,
   InductionStage,
@@ -130,7 +130,7 @@ function healthLabel(s: MemberHealthStatus): string {
 export default function MembersPage() {
   const router = useRouter()
   const { currentOrganizationId, currentUser } = useAuth()
-  const { events, attendance, addAttendanceRecord } = useEvents()
+  const { meetings, attendance, addAttendanceRecord } = useMeetings()
   const orgId = currentOrganizationId ?? ""
   const canManageMembership = currentUser ? canManage(currentUser.role, "membership") : false
 
@@ -155,9 +155,9 @@ export default function MembersPage() {
     () => mockMembers.filter((m) => m.organizationId === orgId && !m.id.startsWith("m-demo")),
     [orgId]
   )
-  const orgEvents = useMemo(
-    () => events.filter((e) => e.organizationId === orgId),
-    [events, orgId]
+  const orgMeetings = useMemo(
+    () => meetings.filter((m) => m.organizationId === orgId),
+    [meetings, orgId]
   )
   const orgAttendance = useMemo(
     () => attendance.filter((a) => a.organizationId === orgId),
@@ -243,7 +243,7 @@ export default function MembersPage() {
             >
               <EngagementTab
                 members={members}
-                events={orgEvents}
+                meetings={orgMeetings}
                 attendance={orgAttendance}
                 addAttendanceRecord={addAttendanceRecord}
                 canManageMembership={canManageMembership}
@@ -472,23 +472,23 @@ function DirectoryTab({
 
 function EngagementTab({
   members,
-  events,
+  meetings,
   attendance,
   canManageMembership,
   addAttendanceRecord,
 }: {
   members: Member[]
-  events: Event[]
+  meetings: Meeting[]
   attendance: AttendanceRecord[]
   canManageMembership: boolean
   addAttendanceRecord: (record: AttendanceRecord) => void
 }) {
-  const [selectedEventId, setSelectedEventId] = useState<string>("")
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string>("")
   const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
   const [saved, setSaved] = useState(false)
   const [localAttendance, setLocalAttendance] = useState<AttendanceRecord[]>([])
 
-  const eventOptions = useMemo(() => events.filter((e) => e.organizationId), [events])
+  const meetingOptions = useMemo(() => meetings.filter((m) => m.organizationId), [meetings])
   const allAttendance = useMemo(() => [...attendance, ...localAttendance], [attendance, localAttendance])
   const lastAttendanceByMember = useMemo(() => {
     const map = new Map<string, string | null>()
@@ -526,13 +526,13 @@ function EngagementTab({
   }
 
   function saveAttendance() {
-    if (!selectedEventId) return
+    if (!selectedMeetingId) return
     const now = new Date().toISOString()
     const orgId = members[0]?.organizationId ?? ""
     const newRecords: AttendanceRecord[] = Array.from(presentIds).map((memberId, i) => ({
       id: `local-att-${Date.now()}-${i}`,
       organizationId: orgId,
-      eventId: selectedEventId,
+      meetingId: selectedMeetingId,
       memberId,
       recordedAt: now,
     }))
@@ -569,26 +569,26 @@ function EngagementTab({
               Attendance logger
             </h3>
             <p className="text-xs mb-3" style={{ color: "var(--muted-foreground)" }}>
-              Select an event and mark who attended. Save to record.
+              Select a meeting and mark who attended. Save to record.
             </p>
             <div className="flex flex-wrap gap-2 items-end">
               <div className="min-w-[200px]">
                 <label className="block text-xs font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>
-                  Event
+                  Meeting
                 </label>
                 <select
-                  value={selectedEventId}
-                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  value={selectedMeetingId}
+                  onChange={(e) => setSelectedMeetingId(e.target.value)}
                   className="w-full rounded-lg border bg-card px-3 py-2 text-sm"
                   style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
                 >
-                  <option value="">Select event</option>
-                  {eventOptions.map((e) => (
-                    <option key={e.id} value={e.id}>{e.name} ({e.date})</option>
+                  <option value="">Select meeting</option>
+                  {meetingOptions.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.date})</option>
                   ))}
                 </select>
               </div>
-              <Button size="sm" onClick={saveAttendance} disabled={!selectedEventId}>
+              <Button size="sm" onClick={saveAttendance} disabled={!selectedMeetingId}>
                 Save attendance
               </Button>
               {saved && (
@@ -597,7 +597,7 @@ function EngagementTab({
                 </span>
               )}
             </div>
-            {selectedEventId && (
+            {selectedMeetingId && (
               <ul className="mt-3 grid gap-1 sm:grid-cols-2 max-h-48 overflow-y-auto">
                 {members.map((m) => (
                   <li key={m.id}>

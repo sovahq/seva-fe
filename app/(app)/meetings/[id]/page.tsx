@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
-import { useEvents } from "@/context/EventsContext"
+import { useMeetings } from "@/context/MeetingsContext"
 import { canManage } from "@/lib/permissions"
 import { generateCheckInCode } from "@/lib/check-in-code"
 import { mockMembers } from "@/data/mock/members"
@@ -14,54 +14,56 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function EventDetailPage() {
+export default function MeetingDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const id = typeof params.id === "string" ? params.id : ""
   const { currentUser, currentOrganizationId } = useAuth()
-  const { events, getAttendanceForEvent, addAttendanceRecord, updateEvent } = useEvents()
+  const { meetings, getAttendanceForMeeting, addAttendanceRecord, updateMeeting } = useMeetings()
 
-  const evt = useMemo(() => events.find((e) => e.id === id), [events, id])
-  const attendance = useMemo(() => (evt ? getAttendanceForEvent(evt.id) : []), [evt, getAttendanceForEvent])
-  const canManageEvents = currentUser ? canManage(currentUser.role, "projects") : false
+  const meeting = useMemo(() => meetings.find((m) => m.id === id), [meetings, id])
+  const attendance = useMemo(
+    () => (meeting ? getAttendanceForMeeting(meeting.id) : []),
+    [meeting, getAttendanceForMeeting]
+  )
+  const canManageMeetings = currentUser ? canManage(currentUser.role, "projects") : false
 
   const [checkInCodeInput, setCheckInCodeInput] = useState("")
   const [checkInStatus, setCheckInStatus] = useState<"idle" | "success" | "error">("idle")
   const [checkInMessage, setCheckInMessage] = useState("")
 
-  if (!evt) {
+  if (!meeting) {
     return (
       <div className="mx-auto max-w-7xl p-6">
-        <p style={{ color: "var(--muted-foreground)" }}>Event not found.</p>
+        <p style={{ color: "var(--muted-foreground)" }}>Meeting not found.</p>
         <Button variant="link" asChild className="mt-2 gap-1.5 p-0">
-          <Link href={ROUTES.EVENTS}>
+          <Link href={ROUTES.MEETINGS}>
             <ArrowLeft className="size-4 shrink-0" />
-            Back to events
+            Back to meetings
           </Link>
         </Button>
       </div>
     )
   }
 
-  const startTimeFormatted = evt.startTime
-    ? new Date(evt.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  const startTimeFormatted = meeting.startTime
+    ? new Date(meeting.startTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
     : null
   const expiresAtFormatted =
-    evt.checkInCodeExpiresAt &&
-    new Date(evt.checkInCodeExpiresAt).toLocaleString(undefined, {
+    meeting.checkInCodeExpiresAt &&
+    new Date(meeting.checkInCodeExpiresAt).toLocaleString(undefined, {
       dateStyle: "short",
       timeStyle: "short",
     })
   const isCodeExpired =
-    evt.checkInCodeExpiresAt && new Date() > new Date(evt.checkInCodeExpiresAt)
+    meeting.checkInCodeExpiresAt && new Date() > new Date(meeting.checkInCodeExpiresAt)
 
   function handleRegenerateCode() {
-    if (!evt) return
+    if (!meeting) return
     const newCode = generateCheckInCode()
     const now = new Date()
     const expiresAt = new Date(now)
     expiresAt.setHours(23, 59, 59, 0)
-    updateEvent(evt.id, {
+    updateMeeting(meeting.id, {
       checkInCode: newCode,
       checkInCodeExpiresAt: expiresAt.toISOString().slice(0, 19),
     })
@@ -69,7 +71,7 @@ export default function EventDetailPage() {
 
   function handleCheckIn(e: React.FormEvent) {
     e.preventDefault()
-    if (!evt) return
+    if (!meeting) return
     setCheckInStatus("idle")
     setCheckInMessage("")
 
@@ -79,12 +81,12 @@ export default function EventDetailPage() {
       setCheckInMessage("Enter the check-in code.")
       return
     }
-    if (code !== evt.checkInCode) {
+    if (code !== meeting.checkInCode) {
       setCheckInStatus("error")
       setCheckInMessage("Invalid code.")
       return
     }
-    if (evt.checkInCodeExpiresAt && new Date() > new Date(evt.checkInCodeExpiresAt)) {
+    if (meeting.checkInCodeExpiresAt && new Date() > new Date(meeting.checkInCodeExpiresAt)) {
       setCheckInStatus("error")
       setCheckInMessage("This check-in code has expired.")
       return
@@ -112,7 +114,7 @@ export default function EventDetailPage() {
     addAttendanceRecord({
       id: `att-${Date.now()}`,
       organizationId: orgId,
-      eventId: evt.id,
+      meetingId: meeting.id,
       memberId: member.id,
       recordedAt: new Date().toISOString(),
     })
@@ -132,28 +134,28 @@ export default function EventDetailPage() {
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-4">
         <Link
-          href={ROUTES.EVENTS}
+          href={ROUTES.MEETINGS}
           className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           style={{ color: "var(--muted-foreground)" }}
         >
           <ArrowLeft className="size-4 shrink-0" />
-          Back to events
+          Back to meetings
         </Link>
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold" style={{ color: "var(--primary)" }}>
-            {evt.name}
+            {meeting.name}
           </h1>
           <p className="mt-1" style={{ color: "var(--muted-foreground)" }}>
-            {evt.date}
+            {meeting.date}
             {startTimeFormatted && ` · ${startTimeFormatted}`}
           </p>
         </div>
-        {canManageEvents && (
+        {canManageMeetings && (
           <Button variant="outline" size="sm" className="gap-1.5" asChild>
-            <Link href={`${ROUTES.EVENTS}/${evt.id}/edit`}>
+            <Link href={`${ROUTES.MEETINGS}/${meeting.id}/edit`}>
               <Pencil className="size-3.5" />
               Edit
             </Link>
@@ -161,14 +163,14 @@ export default function EventDetailPage() {
         )}
       </div>
 
-      {evt.locationType === "virtual" && evt.meetingLink && (
+      {meeting.locationType === "virtual" && meeting.meetingLink && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Location</CardTitle>
           </CardHeader>
           <CardContent>
             <a
-              href={evt.meetingLink}
+              href={meeting.meetingLink}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 font-medium underline underline-offset-2"
@@ -181,25 +183,25 @@ export default function EventDetailPage() {
         </Card>
       )}
 
-      {evt.locationType === "physical" && evt.address && (
+      {meeting.locationType === "physical" && meeting.address && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Location</CardTitle>
           </CardHeader>
           <CardContent>
-            <p style={{ color: "var(--foreground)" }}>{evt.address}</p>
+            <p style={{ color: "var(--foreground)" }}>{meeting.address}</p>
           </CardContent>
         </Card>
       )}
 
-      {evt.flierUrl && (
+      {meeting.flierUrl && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Flier</CardTitle>
           </CardHeader>
           <CardContent>
             <img
-              src={evt.flierUrl}
+              src={meeting.flierUrl}
               alt="Meeting flier"
               className="max-h-80 w-full rounded-lg border border-border/60 object-contain"
             />
@@ -207,7 +209,7 @@ export default function EventDetailPage() {
         </Card>
       )}
 
-      {canManageEvents && (evt.checkInCode || evt.checkInCodeExpiresAt) && (
+      {canManageMeetings && (meeting.checkInCode || meeting.checkInCodeExpiresAt) && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Check-in code</CardTitle>
@@ -221,7 +223,7 @@ export default function EventDetailPage() {
                 className="rounded-lg border bg-muted/30 px-4 py-2 font-mono text-lg font-semibold tracking-wider"
                 style={{ color: "var(--primary)", borderColor: "var(--border)" }}
               >
-                {evt.checkInCode ?? "—"}
+                {meeting.checkInCode ?? "—"}
               </span>
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleRegenerateCode}>
                 <RefreshCw className="size-3.5" />
@@ -276,7 +278,7 @@ export default function EventDetailPage() {
         </CardContent>
       </Card>
 
-      {canManageEvents && attendeeNames.length > 0 && (
+      {canManageMeetings && attendeeNames.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Attendees</CardTitle>

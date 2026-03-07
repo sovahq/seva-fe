@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button"
 const PRIMARY_ICONS = {
   home: LayoutDashboard,
   members: Users,
-  events: Calendar,
+  meetings: Calendar,
   finance: Wallet,
 } as const
 
@@ -44,7 +44,7 @@ function primaryNavItems(
   return [
     { to: paths.home, label: "Dashboard", resource: "membership", iconKey: "home" },
     { to: paths.members, label: "Member Relations", resource: "membership", iconKey: "members" },
-    { to: paths.events, label: "Events", resource: "projects", iconKey: "events" },
+    { to: paths.meetings, label: "Meetings", resource: "projects", iconKey: "meetings" },
     { to: paths.finance, label: "Finance", resource: "financial", iconKey: "finance" },
   ]
 }

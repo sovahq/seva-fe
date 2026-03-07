@@ -15,7 +15,7 @@ import {
   mockMembers,
 } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
-import { useEvents } from "@/context/EventsContext"
+import { useMeetings } from "@/context/MeetingsContext"
 import { PillarCard } from "@/components/cards"
 import { ROUTES } from "@/routes/routenames"
 
@@ -29,7 +29,7 @@ function formatCurrency(amount: number): string {
 
 export function DashboardContent() {
   const { currentOrganizationId } = useAuth()
-  const { events: allEvents } = useEvents()
+  const { meetings: allMeetings } = useMeetings()
 
   const documents = mockGovernanceDocuments
     .filter((d) => d.organizationId === currentOrganizationId)
@@ -46,15 +46,15 @@ export function DashboardContent() {
     (m) => m.organizationId === currentOrganizationId
   ).length
 
-  const events = allEvents
-    .filter((e) => e.organizationId === currentOrganizationId)
+  const meetings = allMeetings
+    .filter((m) => m.organizationId === currentOrganizationId)
     .slice(0, 3)
-  const eventCount = allEvents.filter(
-    (e) => e.organizationId === currentOrganizationId
+  const meetingCount = allMeetings.filter(
+    (m) => m.organizationId === currentOrganizationId
   ).length
   const overviewChartData = [
     { name: "Members", value: memberCount, fullLabel: `${memberCount} members` },
-    { name: "Events", value: eventCount, fullLabel: `${eventCount} events` },
+    { name: "Meetings", value: meetingCount, fullLabel: `${meetingCount} meetings` },
     {
       name: "Dues YTD (₦k)",
       value: financial ? Math.round(financial.duesCollectedYtd / 1000) : 0,
@@ -141,14 +141,14 @@ export function DashboardContent() {
           )}
         </PillarCard>
 
-        <PillarCard title="Project Operations" viewAllLabel="View events" to={ROUTES.EVENTS}>
-          {events.length === 0 ? (
-            <p style={{ color: "var(--muted-foreground)" }}>No upcoming events.</p>
+        <PillarCard title="Project Operations" viewAllLabel="View meetings" to={ROUTES.MEETINGS}>
+          {meetings.length === 0 ? (
+            <p style={{ color: "var(--muted-foreground)" }}>No upcoming meetings.</p>
           ) : (
             <ul className="list-none space-y-1">
-              {events.map((evt) => (
-                <li key={evt.id}>
-                  {evt.name}, {evt.date}
+              {meetings.map((m) => (
+                <li key={m.id}>
+                  {m.name}, {m.date}
                 </li>
               ))}
             </ul>

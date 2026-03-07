@@ -18,7 +18,7 @@ export default function HomePage() {
           className="mt-4 text-lg"
           style={{ color: "var(--muted-foreground)" }}
         >
-          Manage your Local Organisation — governance, members, events, and finances in one place.
+          Manage your Local Organisation — governance, members, meetings, and finances in one place.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Button

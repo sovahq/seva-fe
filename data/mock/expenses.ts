@@ -6,10 +6,10 @@ export const mockExpenseRequisitions: ExpenseRequisition[] = [
     organizationId: "org-jci-eko",
     administrativeYear: 2026,
     status: "PENDING_FINANCE_REVIEW",
-    title: "Q1 Event Venue Deposit",
+    title: "Q1 Meeting Venue Deposit",
     amount: 150000,
     currency: "NGN",
-    budgetCategoryId: "cat-events",
+    budgetCategoryId: "cat-meetings",
     submittedAt: "2026-02-01T10:00:00Z",
     financeNote: null,
     auditLog: [

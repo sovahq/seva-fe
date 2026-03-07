@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useAuth } from "@/context/AuthContext"
-import { useEvents } from "@/context/EventsContext"
+import { useMeetings } from "@/context/MeetingsContext"
 import { generateCheckInCode } from "@/lib/check-in-code"
 import { ROUTES } from "@/routes/routenames"
+import type { Meeting } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, CalendarPlus } from "lucide-react"
 
 const meetingFormSchema = z
   .object({
@@ -57,67 +58,32 @@ const meetingFormSchema = z
 
 type MeetingFormValues = z.infer<typeof meetingFormSchema>
 
-function parseEventToForm(evt: {
-  name: string
-  date: string
-  startTime?: string
-  locationType?: "virtual" | "physical"
-  meetingLink?: string
-  address?: string
-  checkInCodeExpiresAt?: string
-}): MeetingFormValues {
-  const date = evt.date
-  let time = "10:00"
-  if (evt.startTime) {
-    const d = new Date(evt.startTime)
-    time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
-  }
-  let codeExpiresDate = date
-  let codeExpiresTime = "23:59"
-  if (evt.checkInCodeExpiresAt) {
-    const d = new Date(evt.checkInCodeExpiresAt)
-    codeExpiresDate = d.toISOString().slice(0, 10)
-    codeExpiresTime = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
-  }
-  return {
-    name: evt.name,
-    date,
-    time,
-    locationType: evt.locationType ?? "physical",
-    meetingLink: evt.meetingLink ?? "",
-    address: evt.address ?? "",
-    codeExpiresDate,
-    codeExpiresTime,
-  }
+const defaultDate = () => {
+  const d = new Date()
+  return d.toISOString().slice(0, 10)
+}
+const defaultTime = () => {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
 }
 
-export default function EditMeetingPage() {
-  const params = useParams()
+export default function NewMeetingPage() {
   const router = useRouter()
-  const id = typeof params.id === "string" ? params.id : ""
-  const { currentOrganizationId } = useAuth()
-  const { events, updateEvent } = useEvents()
-
-  const evt = useMemo(() => events.find((e) => e.id === id), [events, id])
-  const [checkInCode, setCheckInCode] = useState(() => evt?.checkInCode ?? generateCheckInCode())
-  const [flierUrl, setFlierUrl] = useState<string | null>(evt?.flierUrl ?? null)
-
-  useEffect(() => {
-    if (evt?.checkInCode) setCheckInCode(evt.checkInCode)
-    if (evt?.flierUrl) setFlierUrl(evt.flierUrl)
-  }, [evt?.id])
+  const { currentOrganizationId, organizations } = useAuth()
+  const { addMeeting } = useMeetings()
+  const [checkInCode, setCheckInCode] = useState(() => generateCheckInCode())
+  const [flierUrl, setFlierUrl] = useState<string | null>(null)
 
   const form = useForm<MeetingFormValues>({
     resolver: zodResolver(meetingFormSchema),
-    values: evt ? parseEventToForm(evt) : undefined,
     defaultValues: {
       name: "",
-      date: "",
-      time: "10:00",
+      date: defaultDate(),
+      time: defaultTime(),
       locationType: "physical",
       meetingLink: "",
       address: "",
-      codeExpiresDate: "",
+      codeExpiresDate: defaultDate(),
       codeExpiresTime: "23:59",
     },
   })
@@ -127,20 +93,21 @@ export default function EditMeetingPage() {
   function handleFlierChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) setFlierUrl(URL.createObjectURL(file))
-    else setFlierUrl(evt?.flierUrl ?? null)
+    else setFlierUrl(null)
   }
 
   function handleRegenerateCode() {
-    const newCode = generateCheckInCode()
-    setCheckInCode(newCode)
+    setCheckInCode(generateCheckInCode())
   }
 
   function onSubmit(data: MeetingFormValues) {
-    if (!evt) return
+    const orgId = currentOrganizationId ?? organizations[0]?.id ?? ""
     const startTime = `${data.date}T${data.time}:00`
     const codeExpiresAt = `${data.codeExpiresDate}T${data.codeExpiresTime}:00`
 
-    updateEvent(evt.id, {
+    const meeting: Meeting = {
+      id: `mtg-${Date.now()}`,
+      organizationId: orgId,
       name: data.name.trim(),
       date: data.date,
       startTime,
@@ -150,41 +117,28 @@ export default function EditMeetingPage() {
       flierUrl: flierUrl ?? undefined,
       checkInCode,
       checkInCodeExpiresAt: codeExpiresAt,
-    })
-    router.push(`${ROUTES.EVENTS}/${evt.id}`)
-  }
-
-  if (!evt) {
-    return (
-      <div className="mx-auto max-w-2xl p-6">
-        <p style={{ color: "var(--muted-foreground)" }}>Event not found.</p>
-        <Button variant="link" asChild className="mt-2 gap-1.5 p-0">
-          <Link href={ROUTES.EVENTS}>
-            <ArrowLeft className="size-4 shrink-0" />
-            Back to events
-          </Link>
-        </Button>
-      </div>
-    )
+    }
+    addMeeting(meeting)
+    router.push(`${ROUTES.MEETINGS}/${meeting.id}`)
   }
 
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6">
         <Link
-          href={`${ROUTES.EVENTS}/${evt.id}`}
+          href={ROUTES.MEETINGS}
           className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
           style={{ color: "var(--muted-foreground)" }}
         >
           <ArrowLeft className="size-4 shrink-0" />
-          Back to meeting
+          Back to meetings
         </Link>
       </div>
       <h1 className="text-2xl font-semibold" style={{ color: "var(--primary)" }}>
-        Edit meeting
+        Create meeting
       </h1>
       <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
-        Update details, location, flier, or check-in code expiration.
+        Add name, time, location, and an optional flier. A check-in code will be generated for members.
       </p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">
@@ -228,6 +182,9 @@ export default function EditMeetingPage() {
         <Card>
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Location</CardTitle>
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              Virtual (meeting link) or physical (address).
+            </p>
           </CardHeader>
           <CardContent>
             <FieldSet>
@@ -250,6 +207,7 @@ export default function EditMeetingPage() {
                 {locationType === "virtual" && (
                   <Field>
                     <FieldLabel>Meeting link</FieldLabel>
+                    <FieldDescription>Zoom, Google Meet, or other video call URL.</FieldDescription>
                     <Input
                       {...form.register("meetingLink")}
                       type="url"
@@ -282,6 +240,9 @@ export default function EditMeetingPage() {
         <Card>
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Flier (optional)</CardTitle>
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              Upload an image or PDF to show on the meeting page.
+            </p>
           </CardHeader>
           <CardContent>
             <FieldSet>
@@ -291,7 +252,11 @@ export default function EditMeetingPage() {
                   <div className="flex flex-wrap items-start gap-4">
                     {flierUrl && (
                       <div className="h-24 min-w-[120px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-muted/30">
-                        <img src={flierUrl} alt="Flier preview" className="h-full w-full object-contain" />
+                        <img
+                          src={flierUrl}
+                          alt="Flier preview"
+                          className="h-full w-full object-contain"
+                        />
                       </div>
                     )}
                     <div className="flex flex-col gap-2">
@@ -318,7 +283,7 @@ export default function EditMeetingPage() {
           <CardHeader>
             <CardTitle style={{ color: "var(--primary)" }}>Check-in code</CardTitle>
             <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
-              Regenerate if needed and set when it expires.
+              Share this code at the meeting so members can check in. Set when it expires.
             </p>
           </CardHeader>
           <CardContent>
@@ -340,6 +305,7 @@ export default function EditMeetingPage() {
                 </Field>
                 <Field>
                   <FieldLabel>Code expires at</FieldLabel>
+                  <FieldDescription>After this date and time, the code will no longer work for check-in.</FieldDescription>
                   <div className="flex flex-wrap gap-2">
                     <Input type="date" {...form.register("codeExpiresDate")} className="max-w-[180px]" />
                     <Input type="time" {...form.register("codeExpiresTime")} className="max-w-[140px]" />
@@ -358,11 +324,11 @@ export default function EditMeetingPage() {
 
         <div className="flex gap-3">
           <Button type="submit" className="gap-2">
-            <Save className="size-4" />
-            Save changes
+            <CalendarPlus className="size-4" />
+            Create meeting
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link href={`${ROUTES.EVENTS}/${evt.id}`}>Cancel</Link>
+            <Link href={ROUTES.MEETINGS}>Cancel</Link>
           </Button>
         </div>
       </form>

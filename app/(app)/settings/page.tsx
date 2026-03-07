@@ -292,7 +292,7 @@ function ModulesTab() {
                   {mod.id === "governance" && "Policies, bylaws, and governance documents."}
                   {mod.id === "membership" && "Member directory and membership management."}
                   {mod.id === "financial" && "Treasury, dues, and financial reports."}
-                  {mod.id === "projects" && "Events and project tracking."}
+                  {mod.id === "projects" && "Meetings and project tracking."}
                 </p>
               </div>
               <Switch

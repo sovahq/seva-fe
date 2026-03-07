@@ -164,7 +164,7 @@ export default function OnboardingPage() {
             Create your Local Organisation
           </h1>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/75">
-            Set up your LO to manage governance, members, events, and finances in one place.
+            Set up your LO to manage governance, members, meetings, and finances in one place.
           </p>
         </div>
         <div className="relative mt-8 hidden md:block">
