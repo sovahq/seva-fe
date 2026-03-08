@@ -28,8 +28,6 @@ export default function BoardPage() {
 
   const orgId = currentOrganizationId ?? ""
 
-  console.log(orgId, 'orgId')
-
   const [positions, setPositions] = useState(() =>
     mockBoardPositions.filter((p) => p.organizationId === orgId)
   )

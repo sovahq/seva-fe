@@ -53,6 +53,7 @@ export function DashboardContent() {
           m.email?.toLowerCase() === currentUser.email?.toLowerCase()
       )
     : null
+
   const myDuesEntry = member
     ? memberDues.find(
         (d) =>

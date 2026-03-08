@@ -65,7 +65,7 @@ export const mockMembers: Member[] = [
   },
   {
     id: "m-demo",
-    organizationId: "org-demo",
+    organizationId: "org-jci-eko",
     name: "Demo User",
     role: "Member",
     email: "demo@seva.org",
