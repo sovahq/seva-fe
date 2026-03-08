@@ -19,7 +19,6 @@ import { useAuth } from "@/context/AuthContext"
 import { useDues } from "@/context/DuesContext"
 import { useMeetings } from "@/context/MeetingsContext"
 import { PillarCard } from "@/components/cards"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ROUTES } from "@/routes/routenames"
@@ -37,7 +36,7 @@ export function DashboardContent() {
   const { memberDues } = useDues()
   const { meetings: allMeetings } = useMeetings()
 
-  const orgId = currentOrganizationId ?? ""
+  const orgId = currentOrganizationId ?? currentUser?.organizationId ?? ""
   const adminYear = currentOrganization?.fiscalYear ?? new Date().getFullYear()
   const member = currentUser
     ? mockMembers.find(
@@ -102,6 +101,29 @@ export function DashboardContent() {
         Read-only overview of Executive Governance, Financial Integrity,
         Membership Lifecycle, and Project Operations.
       </p>
+
+      {member && (
+        <div className="mt-6">
+          <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--muted-foreground)" }}>
+            Quick Actions
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {duesPaid ? (
+              <Badge variant="default" className="text-sm py-1.5 px-3">
+                Dues paid for {adminYear}
+              </Badge>
+            ) : (
+              <Button asChild size="sm">
+                <Link href={ROUTES.DUES}>Pay Dues</Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" size="sm">
+              <Link href={ROUTES.DUES}>{duesPaid ? "View dues" : "Go to dues"}</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 h-52 w-full max-w-2xl rounded-lg border p-4" style={{ borderColor: "var(--border)" }}>
         <p className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
           Key metrics
@@ -120,38 +142,6 @@ export function DashboardContent() {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      {currentUser?.role === "member" && member && (
-        <Card className="mt-6 border-primary/20 bg-primary/5">
-          <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-medium text-sm" style={{ color: "var(--primary)" }}>
-                Dues for {adminYear}
-              </p>
-              {duesPaid ? (
-                <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-                  You&apos;ve paid dues for this year.
-                </p>
-              ) : (
-                <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-                  Pay your dues and upload your receipt.
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {duesPaid ? (
-                <Badge variant="default">Dues paid</Badge>
-              ) : (
-                <Button asChild size="sm">
-                  <Link href={ROUTES.DUES}>Pay Dues</Link>
-                </Button>
-              )}
-              <Button asChild variant="ghost" size="sm">
-                <Link href={ROUTES.DUES}>{duesPaid ? "View dues" : "Go to dues"}</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
         <PillarCard title="Executive Governance" to={ROUTES.GOVERNANCE}>

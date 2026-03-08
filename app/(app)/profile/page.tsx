@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("")
   const [saved, setSaved] = useState(false)
 
-  const orgId = currentOrganization?.id ?? ""
+  const orgId = currentOrganization?.id ?? currentUser?.organizationId ?? ""
   const adminYear = currentOrganization?.fiscalYear ?? new Date().getFullYear()
   const member = currentUser
     ? mockMembers.find(

@@ -2,6 +2,17 @@ import type { Member } from "@/types"
 
 export const mockMembers: Member[] = [
   {
+    id: "m-president",
+    organizationId: "org-jci-eko",
+    name: "President User",
+    role: "President",
+    email: "president@jcieko.org",
+    phone: "+234 800 000 0000",
+    skills: ["Leadership"],
+    joinDate: "2022-01-01",
+    committeeAssignments: ["Executive Board"],
+  },
+  {
     id: "m-1",
     organizationId: "org-jci-eko",
     name: "Jane Doe",
@@ -52,5 +63,11 @@ export const mockMembers: Member[] = [
     joinDate: "2025-01-10",
     committeeAssignments: ["Governance"],
   },
-  { id: "m-demo", organizationId: "org-demo", name: "Demo User", role: "Member" },
+  {
+    id: "m-demo",
+    organizationId: "org-demo",
+    name: "Demo User",
+    role: "Member",
+    email: "demo@seva.org",
+  },
 ]

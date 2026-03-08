@@ -30,7 +30,7 @@ export default function DuesPage() {
     getBankDetails,
   } = useDues()
 
-  const orgId = currentOrganizationId ?? ""
+  const orgId = currentOrganizationId ?? currentUser?.organizationId ?? ""
   const adminYear = currentOrganization?.fiscalYear ?? new Date().getFullYear()
 
   const member = currentUser
