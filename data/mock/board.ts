@@ -41,6 +41,13 @@ export const mockBoardPositions: BoardPosition[] = [
     reportsToId: "pos-president",
     moduleAccess: { ...defaultAccess, membership: "view", projects: "view" },
   },
+  {
+    id: "pos-legal",
+    organizationId: "org-jci-eko",
+    name: "General Legal Counsel",
+    reportsToId: "pos-president",
+    moduleAccess: { ...defaultAccess, governance: "manage", membership: "view" },
+  },
 ]
 
 export const mockBoardAssignments: BoardPositionAssignment[] = [
@@ -57,5 +64,12 @@ export const mockBoardAssignments: BoardPositionAssignment[] = [
     positionId: "pos-treasurer",
     userId: null,
     email: "treasurer@jcieko.org",
+  },
+  {
+    id: "assign-3",
+    organizationId: "org-jci-eko",
+    positionId: "pos-legal",
+    userId: null,
+    email: "legal@jcieko.org",
   },
 ]
