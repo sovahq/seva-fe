@@ -10,13 +10,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
-import {
-  mockGovernanceDocuments,
-  mockFinancialSummaries,
-  mockMembers,
-} from "@/data/mock"
+import { mockFinancialSummaries, mockMembers } from "@/data/mock"
 import { useAuth } from "@/context/AuthContext"
 import { useDues } from "@/context/DuesContext"
+import { useGovernance } from "@/context/GovernanceContext"
 import { useMeetings } from "@/context/MeetingsContext"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +39,7 @@ function formatCurrency(amount: number): string {
 export function DashboardContent() {
   const { currentOrganizationId, currentUser, currentOrganization } = useAuth()
   const { memberDues } = useDues()
+  const { documents: governanceDocuments } = useGovernance()
   const { meetings: allMeetings } = useMeetings()
 
   const orgId = currentOrganizationId ?? currentUser?.organizationId ?? ""
@@ -64,7 +62,7 @@ export function DashboardContent() {
     : null
   const duesPaid = myDuesEntry?.status === "paid"
 
-  const documents = mockGovernanceDocuments
+  const documents = governanceDocuments
     .filter((d) => d.organizationId === currentOrganizationId)
     .slice(0, 3)
 

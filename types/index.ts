@@ -11,10 +11,23 @@ export interface User {
   organizationId?: string
 }
 
+export type GovernanceDocumentType = "constitution" | "bylaws" | "policy" | "other"
+
 export interface GovernanceDocument {
   id: string
   organizationId: string
   title: string
+  type?: GovernanceDocumentType
+  /** Optional link to original PDF (object URL in mock, blob URL later). */
+  sourcePdfUrl?: string
+  /** HTML version of the document (stored after interpreting PDF). */
+  contentHtml?: string
+  /** Plain text used for search (extracted from PDF or derived from HTML). */
+  searchableText?: string
+  /** When the document was last reviewed by Legal Counsel (ISO date string). */
+  lastLegalReviewAt?: string
+  /** User or position id of who performed the last legal review. */
+  lastLegalReviewBy?: string
 }
 
 export interface FinancialSummary {

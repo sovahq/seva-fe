@@ -3,6 +3,7 @@
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { AppShell } from "@/components/layout"
 import { DuesProvider } from "@/context/DuesContext"
+import { GovernanceProvider } from "@/context/GovernanceContext"
 import { MeetingsProvider } from "@/context/MeetingsContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +11,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ProtectedRoute>
       <MeetingsProvider>
         <DuesProvider>
-          <AppShell>{children}</AppShell>
+          <GovernanceProvider>
+            <AppShell>{children}</AppShell>
+          </GovernanceProvider>
         </DuesProvider>
       </MeetingsProvider>
     </ProtectedRoute>
