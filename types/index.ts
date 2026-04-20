@@ -18,16 +18,8 @@ export interface GovernanceDocument {
   organizationId: string
   title: string
   type?: GovernanceDocumentType
-  /** Optional link to original PDF (object URL in mock, blob URL later). */
+  /** Optional external PDF URL (e.g. mock demo). */
   sourcePdfUrl?: string
-  /** HTML version of the document (stored after interpreting PDF). */
-  contentHtml?: string
-  /** Plain text used for search (extracted from PDF or derived from HTML). */
-  searchableText?: string
-  /** When the document was last reviewed by Legal Counsel (ISO date string). */
-  lastLegalReviewAt?: string
-  /** User or position id of who performed the last legal review. */
-  lastLegalReviewBy?: string
 }
 
 export interface FinancialSummary {

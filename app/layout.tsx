@@ -23,7 +23,7 @@ export default function RootLayout({
     <html lang="en" className={plusJakartaSans.variable}>
       <body className="antialiased">
         <Providers>
-          <div className="flex min-h-screen flex-col">
+          <div className="relative z-[1] flex min-h-screen flex-col">
             <SiteHeader />
             <PageTransition>{children}</PageTransition>
           </div>
