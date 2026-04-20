@@ -87,7 +87,7 @@ export default function SettingsPage() {
                     color:
                       activeTab === tab.id
                         ? "var(--primary)"
-                        : "rgba(0,45,91,0.85)",
+                        : "var(--muted-foreground)",
                   }}
                 >
                   {tab.label}

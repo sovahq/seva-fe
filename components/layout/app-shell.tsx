@@ -37,7 +37,6 @@ const NESTED_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   settings: Settings,
 }
 
-/** Primary items shown as direct links in the bottom nav */
 function primaryNavItems(
   paths: ReturnType<typeof useAppPaths>
 ): { to: string; label: string; resource: Resource; iconKey: keyof typeof PRIMARY_ICONS }[] {
@@ -49,7 +48,6 @@ function primaryNavItems(
   ]
 }
 
-/** Nested items shown inside the "More" popover */
 function nestedNavItems(
   paths: ReturnType<typeof useAppPaths>
 ): { to: string; label: string; resource?: Resource; iconKey: string }[] {
@@ -60,13 +58,73 @@ function nestedNavItems(
   ]
 }
 
+function UserMenuPanel({
+  currentUser,
+  availableUsers,
+  switchUser,
+  onClose,
+  onLogout,
+}: {
+  currentUser: NonNullable<ReturnType<typeof useAuth>["currentUser"]>
+  availableUsers: ReturnType<typeof useAuth>["availableUsers"]
+  switchUser: ReturnType<typeof useAuth>["switchUser"]
+  onClose: () => void
+  onLogout: () => void
+}) {
+  return (
+    <>
+      <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
+        {currentUser.name} · {currentUser.role}
+      </div>
+      <div className="py-1">
+        <Button
+          variant="ghost"
+          type="button"
+          className="w-full justify-start gap-2 rounded-none px-4 py-2 text-sm text-foreground"
+          asChild
+        >
+          <Link href={ROUTES.PROFILE} onClick={onClose}>
+            <User className="size-4 shrink-0 stroke-[1.5] text-primary" />
+            Profile
+          </Link>
+        </Button>
+        <div className="px-4 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Switch user
+        </div>
+        {availableUsers
+          .filter((u) => u.id !== currentUser.id)
+          .map((u) => (
+            <Button
+              key={u.id}
+              variant="ghost"
+              type="button"
+              onClick={() => {
+                switchUser(u)
+                onClose()
+              }}
+              className="w-full justify-start rounded-none px-4 py-2 text-sm text-foreground"
+            >
+              {u.name}
+            </Button>
+          ))}
+      </div>
+      <div className="border-t border-border pt-1">
+        <Button
+          variant="ghost"
+          type="button"
+          onClick={onLogout}
+          className="w-full justify-start gap-2 rounded-none px-4 py-2 text-sm text-destructive"
+        >
+          <LogOut className="size-4 shrink-0 stroke-[1.5]" />
+          Log out
+        </Button>
+      </div>
+    </>
+  )
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const {
-    currentUser,
-    availableUsers,
-    switchUser,
-    logout,
-  } = useAuth()
+  const { currentUser, availableUsers, switchUser, logout } = useAuth()
   const { viewAsPosition } = useViewAs()
   const paths = useAppPaths()
   const pathname = usePathname()
@@ -105,116 +163,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(path)
   }
 
+  function closeUserMenu() {
+    setUserMenuOpen(false)
+  }
+
+  const viewAsBadge = viewAsPosition ? (
+    <span className="rounded-full bg-surface-soft px-2.5 py-1 text-xs font-medium text-primary">
+      Viewing as: {viewAsPosition.name}
+    </span>
+  ) : null
+
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
-      <header
-        className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b bg-card/80 px-4 backdrop-blur-sm"
-        style={{ borderColor: "rgba(0,45,91,0.1)" }}
-      >
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
+      {/* Mobile: top bar */}
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-background/85 px-4 backdrop-blur-md sm:px-6 lg:hidden">
         <SevaLogo
           asLink
           to={ROUTES.DASHBOARD}
           size="sm"
           style={{ color: "var(--primary)" }}
-          className="transition-opacity hover:opacity-90"
+          className="min-w-0 shrink transition-opacity hover:opacity-90"
         />
-        {viewAsPosition && (
-          <span
-            className="rounded-full px-2.5 py-1 text-xs font-medium"
-            style={{
-              backgroundColor: "rgba(0,45,91,0.12)",
-              color: "var(--primary)",
-            }}
-          >
-            Viewing as: {viewAsPosition.name}
-          </span>
-        )}
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          {viewAsBadge}
+          <div className="relative shrink-0">
             <Button
               variant="outline"
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="min-w-0 gap-2 font-medium"
-              style={{
-                borderColor: "rgba(0,45,91,0.2)",
-                color: "rgba(0,45,91,0.8)",
-              }}
+              className="min-w-0 gap-2 border-border font-medium text-foreground/85"
             >
-              <span className="max-w-[120px] truncate text-sm">{currentUser.name}</span>
+              <span className="max-w-[100px] truncate text-sm sm:max-w-[140px]">{currentUser.name}</span>
             </Button>
             {userMenuOpen && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  aria-hidden
-                  onClick={() => setUserMenuOpen(false)}
-                />
-                <div
-                  className="absolute right-0 top-full z-20 mt-1 w-56 rounded-xl border py-1 shadow-lg backdrop-blur-md"
-                  style={{
-                    borderColor: "rgba(0,45,91,0.1)",
-                    backgroundColor: "rgba(255,255,255,0.95)",
-                  }}
-                >
-                  <div
-                    className="border-b px-4 py-2 text-xs"
-                    style={{ borderColor: "rgba(0,45,91,0.1)", color: "var(--muted-foreground)" }}
-                  >
-                    {currentUser.name} · {currentUser.role}
-                  </div>
-                  <div className="py-1">
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="w-full justify-start gap-2 rounded-none px-4 py-2 text-sm"
-                      style={{ color: "rgba(0,45,91,0.9)" }}
-                      asChild
-                    >
-                      <Link href={ROUTES.PROFILE} onClick={() => setUserMenuOpen(false)}>
-                        <User className="size-4 shrink-0" />
-                        Profile
-                      </Link>
-                    </Button>
-                    <div
-                      className="px-4 py-1 text-xs font-medium uppercase tracking-wider"
-                      style={{ color: "var(--muted-foreground)" }}
-                    >
-                      Switch user
-                    </div>
-                    {availableUsers
-                      .filter((u) => u.id !== currentUser.id)
-                      .map((u) => (
-                        <Button
-                          key={u.id}
-                          variant="ghost"
-                          type="button"
-                          onClick={() => {
-                            switchUser(u)
-                            setUserMenuOpen(false)
-                          }}
-                          className="w-full justify-start rounded-none px-4 py-2 text-sm"
-                          style={{ color: "rgba(0,45,91,0.9)" }}
-                        >
-                          {u.name}
-                        </Button>
-                      ))}
-                  </div>
-                  <div
-                    className="border-t pt-1"
-                    style={{ borderColor: "rgba(0,45,91,0.1)" }}
-                  >
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full justify-start gap-2 rounded-none px-4 py-2 text-sm"
-                      style={{ color: "var(--destructive)" }}
-                    >
-                      <LogOut className="size-4 shrink-0" />
-                      Log out
-                    </Button>
-                  </div>
+                <div className="fixed inset-0 z-10" aria-hidden onClick={closeUserMenu} />
+                <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-2xl border border-border bg-card/95 py-1 shadow-none backdrop-blur-md">
+                  <UserMenuPanel
+                    currentUser={currentUser}
+                    availableUsers={availableUsers}
+                    switchUser={switchUser}
+                    onClose={closeUserMenu}
+                    onLogout={handleLogout}
+                  />
                 </div>
               </>
             )}
@@ -222,78 +213,182 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 px-4 pb-28 pt-6">
-        <div className="mx-auto max-w-6xl">{children}</div>
-      </main>
+      {/* Desktop: left sidebar */}
+      <aside
+        className="hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-background lg:sticky lg:top-0 lg:flex"
+        aria-label="App sidebar"
+      >
+        <div className="flex flex-1 flex-col px-3 pb-4 pt-6">
+          <div className="mb-8 px-2">
+            <SevaLogo
+              asLink
+              to={ROUTES.DASHBOARD}
+              size="sm"
+              style={{ color: "var(--primary)" }}
+              className="transition-opacity hover:opacity-90"
+            />
+          </div>
 
+          <nav className="flex flex-1 flex-col gap-0.5" aria-label="Main navigation">
+            {visiblePrimaryItems.map((item) => {
+              const Icon = PRIMARY_ICONS[item.iconKey]
+              const active = isActive(item.to)
+              return (
+                <Link
+                  key={item.to}
+                  href={item.to}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-surface-soft text-primary"
+                      : "text-foreground/80 hover:bg-surface-soft/60 hover:text-primary"
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "size-4 shrink-0 stroke-[1.5]",
+                      active ? "text-primary" : "text-icon-muted"
+                    )}
+                  />
+                  {item.label}
+                </Link>
+              )
+            })}
+
+            {nestedItems.length > 0 ? (
+              <div className="mt-6 border-t border-border pt-5">
+                <p className="mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  More
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {nestedItems.map((item) => {
+                    const Icon = NESTED_ICONS[item.iconKey]
+                    const itemActive =
+                      pathname === item.to || pathname.startsWith(item.to + "/")
+                    return (
+                      <Link
+                        key={item.to}
+                        href={item.to}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                          itemActive
+                            ? "bg-surface-soft text-primary"
+                            : "text-foreground/80 hover:bg-surface-soft/60 hover:text-primary"
+                        )}
+                      >
+                        {Icon ? (
+                          <Icon
+                            className={cn(
+                              "size-4 shrink-0 stroke-[1.5]",
+                              itemActive ? "text-primary" : "text-icon-muted"
+                            )}
+                          />
+                        ) : null}
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </nav>
+
+          <div className="mt-auto space-y-3 border-t border-border pt-4">
+            {viewAsPosition ? (
+              <div className="px-2">
+                <span className="inline-flex rounded-full bg-surface-soft px-2.5 py-1 text-xs font-medium text-primary">
+                  Viewing as: {viewAsPosition.name}
+                </span>
+              </div>
+            ) : null}
+            <div className="relative px-1">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="w-full min-w-0 justify-start gap-2 border-border font-medium text-foreground/85"
+              >
+                <span className="truncate text-left text-sm">{currentUser.name}</span>
+              </Button>
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" aria-hidden onClick={closeUserMenu} />
+                  <div className="absolute bottom-full left-0 right-0 z-20 mb-2 rounded-2xl border border-border bg-card/95 py-1 shadow-none backdrop-blur-md">
+                    <UserMenuPanel
+                      currentUser={currentUser}
+                      availableUsers={availableUsers}
+                      switchUser={switchUser}
+                      onClose={closeUserMenu}
+                      onLogout={handleLogout}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main className="min-h-0 flex-1 px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-10 lg:pt-10">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
+      </div>
+
+      {/* Mobile: bottom navigation */}
       <nav
         className={cn(
-          "fixed bottom-4 left-4 right-4 z-40 mx-auto flex max-w-2xl items-center justify-center gap-1 rounded-2xl px-2 py-2.5",
-          "border shadow-xl backdrop-blur-xl",
-          "ring-1 ring-white/60 ring-inset"
+          "fixed bottom-4 left-4 right-4 z-40 mx-auto flex max-w-2xl items-center justify-center gap-1 rounded-[1.25rem] border border-border bg-card/90 px-2 py-2.5 shadow-none backdrop-blur-md sm:left-6 sm:right-6 lg:hidden"
         )}
-        style={{
-          borderColor: "rgba(0,45,91,0.2)",
-          backgroundColor: "rgba(255,255,255,0.85)",
-          boxShadow: "0 20px 25px -5px rgba(0,45,91,0.08)",
-        }}
         aria-label="Main navigation"
       >
         {visiblePrimaryItems.map((item) => {
           const Icon = PRIMARY_ICONS[item.iconKey]
+          const active = isActive(item.to)
           return (
             <Link
               key={item.to}
               href={item.to}
               className={cn(
-                "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
-                isActive(item.to) ? "bg-primary/15" : "hover:bg-primary/10"
+                "flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors sm:px-4",
+                active ? "bg-surface-soft text-primary" : "text-foreground/75 hover:bg-surface-soft/60 hover:text-primary"
               )}
-              style={{
-                color: isActive(item.to) ? "var(--primary)" : "rgba(0,45,91,0.8)",
-              }}
             >
-              <Icon className="size-4 shrink-0" />
-              {item.label}
+              <Icon
+                className={cn("size-4 shrink-0 stroke-[1.5]", active ? "text-primary" : "text-icon-muted")}
+              />
+              <span className="hidden min-[380px]:inline">{item.label}</span>
             </Link>
           )
         })}
-        {nestedItems.length > 0 && (
+        {nestedItems.length > 0 ? (
           <div className="relative">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setMoreMenuOpen(!moreMenuOpen)}
               className={cn(
-                "rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/10",
-                isMoreActive && "bg-primary/15"
+                "rounded-xl px-3 py-2.5 text-sm font-medium transition-colors hover:bg-surface-soft/60 sm:px-4",
+                isMoreActive ? "bg-surface-soft text-primary" : "text-foreground/75 hover:text-primary"
               )}
-              style={{
-                color: isMoreActive ? "var(--primary)" : "rgba(0,45,91,0.8)",
-              }}
             >
-              More
+              <span className="hidden min-[380px]:inline">More</span>
+              <span className="min-[380px]:hidden">⋯</span>
               <ChevronUp
-                className={cn("ml-1 size-3.5 transition-transform", moreMenuOpen && "rotate-180")}
+                className={cn("ml-0.5 size-3.5 shrink-0 stroke-[1.5] transition-transform min-[380px]:ml-1", moreMenuOpen && "rotate-180")}
               />
             </Button>
             {moreMenuOpen && (
               <>
+                <div className="fixed inset-0 z-10" aria-hidden onClick={() => setMoreMenuOpen(false)} />
                 <div
-                  className="fixed inset-0 z-10"
-                  aria-hidden
-                  onClick={() => setMoreMenuOpen(false)}
-                />
-                <div
-                  className="absolute bottom-full left-1/2 z-20 mb-2 w-48 -translate-x-1/2 rounded-xl border py-1 shadow-lg backdrop-blur-md"
-                  style={{
-                    borderColor: "rgba(0,45,91,0.15)",
-                    backgroundColor: "rgba(255,255,255,0.98)",
-                  }}
+                  className="absolute bottom-full left-1/2 z-20 mb-3 w-48 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-2xl border border-border bg-card py-1 shadow-none backdrop-blur-md"
                   role="menu"
                 >
                   {nestedItems.map((item) => {
                     const Icon = NESTED_ICONS[item.iconKey]
+                    const itemActive =
+                      pathname === item.to || pathname.startsWith(item.to + "/")
                     return (
                       <Link
                         key={item.to}
@@ -302,18 +397,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         role="menuitem"
                         className={cn(
                           "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors",
-                          (pathname === item.to || pathname.startsWith(item.to + "/"))
-                            ? "bg-primary/10"
-                            : "hover:bg-primary/5"
+                          itemActive ? "bg-surface-soft text-primary" : "text-foreground hover:bg-surface-soft/50"
                         )}
-                        style={{
-                          color:
-                            pathname === item.to || pathname.startsWith(item.to + "/")
-                              ? "var(--primary)"
-                              : "rgba(0,45,91,0.9)",
-                        }}
                       >
-                        {Icon && <Icon className="size-4 shrink-0" />}
+                        {Icon ? (
+                          <Icon
+                            className={cn(
+                              "size-4 shrink-0 stroke-[1.5]",
+                              itemActive ? "text-primary" : "text-icon-muted"
+                            )}
+                          />
+                        ) : null}
                         {item.label}
                       </Link>
                     )
@@ -322,7 +416,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </>
             )}
           </div>
-        )}
+        ) : null}
       </nav>
     </div>
   )

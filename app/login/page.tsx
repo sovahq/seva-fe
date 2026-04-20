@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -54,13 +54,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-4 sm:p-6">
-      {/* Subtle background */}
+    <div className="flex min-h-screen items-center justify-center bg-background p-6 sm:p-10">
       <div
-        className="pointer-events-none fixed inset-0 opacity-[0.03]"
+        className="pointer-events-none fixed inset-0 opacity-[0.06]"
         style={{
-          backgroundImage: `radial-gradient(circle at 20% 30%, var(--primary) 0%, transparent 50%),
-            radial-gradient(circle at 80% 70%, var(--primary) 0%, transparent 50%)`,
+          backgroundImage: `radial-gradient(circle at 20% 30%, var(--surface-soft) 0%, transparent 45%),
+            radial-gradient(circle at 80% 70%, var(--icon-muted) 0%, transparent 45%)`,
         }}
       />
       <motion.div
@@ -69,14 +68,7 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
-        <div
-          className="rounded-2xl border p-8 shadow-xl sm:p-10"
-          style={{
-            borderColor: "rgba(0, 45, 91, 0.12)",
-            backgroundColor: "var(--card)",
-            boxShadow: "0 25px 50px -12px rgba(0, 45, 91, 0.08)",
-          }}
-        >
+        <div className="rounded-[1.25rem] border border-border bg-card p-8 shadow-none sm:p-10">
           <div className="mb-8 flex flex-col items-center text-center">
             <SevaLogo
               asLink
@@ -85,19 +77,12 @@ export default function LoginPage() {
               style={{ color: "var(--primary)" }}
               className="transition-opacity hover:opacity-90"
             />
-            <p
-              className="mt-2 text-sm"
-              style={{ color: "var(--muted-foreground)" }}
-            >
+            <p className="mt-2 text-sm text-muted-foreground">
               Sign in to access your dashboard
             </p>
             {fromOnboarding && (
               <motion.div
-                className="mt-4 w-full rounded-xl px-4 py-3 text-sm font-medium"
-                style={{
-                  backgroundColor: "rgba(0, 45, 91, 0.08)",
-                  color: "var(--primary)",
-                }}
+                className="mt-4 w-full rounded-xl bg-surface-soft px-4 py-3 text-sm font-medium text-primary"
                 initial={{ opacity: 0, height: 0, marginTop: 0 }}
                 animate={{ opacity: 1, height: "auto", marginTop: 16 }}
                 transition={{ delay: 0.2, duration: 0.3 }}
@@ -109,7 +94,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid gap-2">
-              <Label htmlFor="login-email" style={{ color: "var(--foreground)" }}>
+              <Label htmlFor="login-email" className="text-foreground">
                 Email
               </Label>
               <Input
@@ -120,11 +105,10 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 w-full px-3"
-                style={{ borderColor: "rgba(0, 45, 91, 0.2)" }}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="login-password" style={{ color: "var(--foreground)" }}>
+              <Label htmlFor="login-password" className="text-foreground">
                 Password
               </Label>
               <div className="relative">
@@ -136,7 +120,6 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 w-full pl-3 pr-10"
-                  style={{ borderColor: "rgba(0, 45, 91, 0.2)" }}
                 />
                 <button
                   type="button"
@@ -151,40 +134,20 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <Button
-              type="submit"
-              className="h-11 w-full font-medium"
-              style={{
-                backgroundColor: "var(--primary)",
-                color: "var(--primary-foreground)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--primary-hover)"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--primary)"
-              }}
-            >
+            <Button type="submit" className="h-12 w-full rounded-full text-base font-semibold">
               Sign in
             </Button>
           </form>
 
-          <p
-            className="mt-6 text-center text-xs"
-            style={{ color: "var(--muted-foreground)" }}
-          >
-            Demo: use an account email and password <strong>password</strong>.
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Demo: use an account email and password <strong className="text-foreground">password</strong>.
           </p>
 
-          <p
-            className="mt-6 text-center text-sm"
-            style={{ color: "var(--muted-foreground)" }}
-          >
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Don&apos;t have an organisation?{" "}
             <Link
               href={ROUTES.ONBOARDING}
-              className="font-medium underline underline-offset-2 hover:opacity-90"
-              style={{ color: "var(--primary)" }}
+              className="font-semibold text-brand-link underline-offset-4 transition-colors hover:text-primary"
             >
               Get started
             </Link>

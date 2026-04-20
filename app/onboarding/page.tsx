@@ -1,6 +1,6 @@
 "use client"
 
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion } from "motion/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Building2, ArrowRight, ArrowLeft } from "lucide-react"
 import Link from "next/link"

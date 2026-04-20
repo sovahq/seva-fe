@@ -25,11 +25,8 @@ export function SiteHeader() {
     return null
 
   return (
-    <header
-      className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--card)]"
-      style={{ borderColor: "var(--border)" }}
-    >
-      <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center px-6 sm:px-10 lg:px-12">
         <SevaLogo
           asLink
           to="/"
@@ -37,33 +34,32 @@ export function SiteHeader() {
           className="transition-opacity hover:opacity-90"
           style={{ color: "var(--primary)" }}
         />
-        <nav className="ml-8 flex gap-6" aria-label="Main">
+        <nav className="ml-10 flex gap-10" aria-label="Main">
           <Link
             href="/"
-            className="text-sm font-medium transition-opacity hover:opacity-80"
-            style={{
-              color: pathname === "/" ? "var(--primary)" : "var(--muted-foreground)",
-            }}
+            className={`text-sm font-medium transition-colors ${
+              pathname === "/" ? "text-primary" : "text-muted-foreground hover:text-brand-link"
+            }`}
           >
             Home
           </Link>
           <Link
             href={ROUTES.ONBOARDING}
-            className="text-sm font-medium transition-opacity hover:opacity-80"
-            style={{
-              color:
-                pathname === ROUTES.ONBOARDING ? "var(--primary)" : "var(--muted-foreground)",
-            }}
+            className={`text-sm font-medium transition-colors ${
+              pathname === ROUTES.ONBOARDING
+                ? "text-primary"
+                : "text-muted-foreground hover:text-brand-link"
+            }`}
           >
             Get started
           </Link>
           <Link
             href={ROUTES.LOGIN}
-            className="text-sm font-medium transition-opacity hover:opacity-80"
-            style={{
-              color:
-                pathname === ROUTES.LOGIN ? "var(--primary)" : "var(--muted-foreground)",
-            }}
+            className={`text-sm font-medium transition-colors ${
+              pathname === ROUTES.LOGIN
+                ? "text-primary"
+                : "text-muted-foreground hover:text-brand-link"
+            }`}
           >
             Log in
           </Link>

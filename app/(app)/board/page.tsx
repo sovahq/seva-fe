@@ -86,7 +86,7 @@ export default function BoardPage() {
                 : "hover:bg-primary/10"
             )}
             style={{
-              color: activeTab === tab.id ? "var(--primary)" : "rgba(0,45,91,0.8)",
+              color: activeTab === tab.id ? "var(--primary)" : "var(--muted-foreground)",
             }}
           >
             {tab.label}

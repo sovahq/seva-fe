@@ -148,15 +148,15 @@ export function DashboardContent() {
   ]
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="grid grid-cols-12 gap-x-8 gap-y-16">
       {/* Welcome / Header */}
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: "var(--primary)" }}>
+      <header className="col-span-12">
+        <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
           Dashboard
         </h1>
-        <p className="mt-1.5 text-base" style={{ color: "var(--muted-foreground)" }}>
+        <p className="mt-3 max-w-3xl text-lg leading-relaxed text-muted-foreground">
           {currentOrganization?.name && (
-            <span className="font-medium" style={{ color: "var(--primary)" }}>{currentOrganization.name}</span>
+            <span className="font-semibold text-primary">{currentOrganization.name}</span>
           )}
           {currentOrganization?.name && " · "}
           {adminYear} overview. Governance, members, meetings, and finances at a glance.
@@ -165,34 +165,31 @@ export function DashboardContent() {
 
       {/* Quick Actions – only when user has a member record */}
       {member && (
-        <section className="mb-10">
-          <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
-            Quick Actions
+        <section className="col-span-12">
+          <h2 className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-icon-muted">
+            Quick actions
           </h2>
           <Link
             href={ROUTES.DUES}
-            className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-2xl"
+            className="block rounded-[1.25rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2"
           >
             <Card
               className={cn(
-                "overflow-hidden rounded-2xl border-2 shadow-sm transition-all hover:shadow-md",
-                duesPaid ? "border-primary/20 bg-primary/[0.03]" : "border-primary/40 bg-primary/[0.04]"
+                "overflow-hidden rounded-[1.25rem] border transition-colors hover:border-brand-link/40",
+                duesPaid ? "border-border bg-surface-soft/40" : "border-primary/35 bg-surface-soft/60"
               )}
             >
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
-                      style={{ backgroundColor: "var(--primary)" }}
-                    >
-                      <Wallet className="size-7 text-white" />
+              <CardContent className="p-8 sm:p-10">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-5">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary">
+                      <Wallet className="size-7 stroke-[1.5] text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold" style={{ color: "var(--primary)" }}>
-                        {duesPaid ? `Dues paid for ${adminYear}` : "Pay Dues"}
+                      <h3 className="text-xl font-semibold text-primary">
+                        {duesPaid ? `Dues paid for ${adminYear}` : "Pay dues"}
                       </h3>
-                      <p className="mt-1 text-sm max-w-md" style={{ color: "var(--muted-foreground)" }}>
+                      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
                         {duesPaid
                           ? "Your payment has been confirmed by Finance. View your dues history anytime."
                           : "Pay your dues for the year and upload your payment receipt. Finance will confirm once received."}
@@ -201,16 +198,13 @@ export function DashboardContent() {
                   </div>
                   <div className="shrink-0">
                     {duesPaid ? (
-                      <Badge variant="default" className="text-sm px-4 py-2 rounded-lg">
+                      <Badge variant="default" className="rounded-full px-4 py-2 text-sm">
                         View dues
                       </Badge>
                     ) : (
-                      <span
-                        className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-                        style={{ backgroundColor: "var(--primary)" }}
-                      >
-                        Pay Dues now
-                        <ChevronRight className="size-4" />
+                      <span className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform active:scale-[0.98]">
+                        Pay dues now
+                        <ChevronRight className="size-4 stroke-[1.5]" />
                       </span>
                     )}
                   </div>
@@ -222,26 +216,26 @@ export function DashboardContent() {
       )}
 
       {/* Key metrics – stat cards + chart */}
-      <section className="mb-10">
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
+      <section className="col-span-12 space-y-8">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-icon-muted">
           At a glance
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3 mb-6">
+        <div className="grid gap-6 sm:grid-cols-12">
           {statCards.map(({ label, value, icon: Icon, href }) => (
-            <Link key={label} href={href}>
-              <Card className="rounded-2xl border border-border/80 bg-card shadow-sm transition-colors hover:bg-muted/30 h-full">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
+            <Link key={label} href={href} className="sm:col-span-4">
+              <Card className="h-full rounded-[1.25rem] border border-border bg-card transition-colors hover:border-brand-link/50 hover:bg-surface-soft/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         {label}
                       </p>
-                      <p className="mt-1.5 text-2xl font-bold tabular-nums" style={{ color: "var(--primary)" }}>
+                      <p className="mt-2 text-2xl font-bold tabular-nums text-primary">
                         {value}
                       </p>
                     </div>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                      <Icon className="size-5" style={{ color: "var(--primary)" }} />
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-soft">
+                      <Icon className="size-5 stroke-[1.5] text-primary" />
                     </div>
                   </div>
                 </CardContent>
@@ -249,27 +243,30 @@ export function DashboardContent() {
             </Link>
           ))}
         </div>
-        <Card className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
+        <Card className="overflow-hidden rounded-[1.25rem] border border-border bg-card">
           <CardHeader className="pb-2">
-            <p className="text-sm font-medium" style={{ color: "var(--primary)" }}>
-              Key metrics
-            </p>
+            <p className="text-sm font-semibold text-primary">Key metrics</p>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="h-48 w-full sm:h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={overviewChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/70" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} />
                   <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} allowDecimals={false} />
                   <Tooltip
                     formatter={(value: unknown, _name: unknown, props: { payload?: { fullLabel?: string } }) =>
                       [props?.payload?.fullLabel ?? String(value), ""]
                     }
-                    contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid var(--border)",
+                      boxShadow: "none",
+                      background: "var(--card)",
+                    }}
                     labelStyle={{ color: "var(--primary)" }}
                   />
-                  <Bar dataKey="value" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="value" fill="var(--primary)" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -278,32 +275,26 @@ export function DashboardContent() {
       </section>
 
       {/* Explore – pillar links */}
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--muted-foreground)" }}>
+      <section className="col-span-12 space-y-8">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-icon-muted">
           Explore
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-12">
           {pillarLinks.map(({ title, description, icon: Icon, href, content }) => (
-            <Link key={title} href={href}>
-              <Card className="group h-full rounded-2xl border border-border/80 bg-card shadow-sm transition-all hover:shadow-md hover:border-primary/20">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/15">
-                      <Icon className="size-5" style={{ color: "var(--primary)" }} />
+            <Link key={title} href={href} className="sm:col-span-6">
+              <Card className="group h-full rounded-[1.25rem] border border-border bg-card transition-colors hover:border-brand-link/45 hover:bg-surface-soft/25">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-5">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface-soft transition-colors group-hover:bg-surface-soft/80">
+                      <Icon className="size-5 stroke-[1.5] text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold" style={{ color: "var(--primary)" }}>
-                        {title}
-                      </h3>
-                      <p className="mt-0.5 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                        {description}
-                      </p>
-                      <p className="mt-3 line-clamp-2 text-sm" style={{ color: "var(--muted-foreground)" }}>
-                        {content}
-                      </p>
-                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium" style={{ color: "var(--primary)" }}>
+                      <h3 className="font-semibold text-primary">{title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+                      <p className="mt-4 line-clamp-2 text-sm text-muted-foreground">{content}</p>
+                      <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-link transition-colors group-hover:text-primary">
                         View
-                        <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                        <ChevronRight className="size-4 stroke-[1.5] transition-transform group-hover:translate-x-0.5" />
                       </span>
                     </div>
                   </div>

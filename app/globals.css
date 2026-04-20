@@ -8,6 +8,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-icon-muted: var(--icon-muted);
+  --color-brand-link: var(--brand-link);
+  --color-surface-soft: var(--surface-soft);
   --font-sans: var(--font-sans);
   --font-mono: ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -53,75 +56,301 @@
 }
 
 :root {
-  /* Seva brand – only colors overridden; radius/focus from shadcn kept */
-  --background: #f0f4f8;
-  --foreground: #002d5b;
-  --card: #ffffff;
-  --card-foreground: #002d5b;
-  --popover: #ffffff;
-  --popover-foreground: #002d5b;
-  --primary: #002d5b;
-  --primary-foreground: #ffffff;
-  --primary-hover: #003d75;
-  --secondary: #e2e8f0;
-  --secondary-foreground: #002d5b;
-  --muted: #e2e8f0;
-  --muted-foreground: #64748b;
-  --accent: #e2e8f0;
-  --accent-foreground: #002d5b;
-  --destructive: #dc2626;
-  --border: #cbd5e1;
-  --input: #cbd5e1;
-  --ring: #002d5b;
-  --success: #059669;
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Airbnb production palette (reference tokens) */
+  --palette-bg-primary: #ffffff;
+  --palette-bg-primary-disabled: #f7f7f7;
+  --palette-bg-primary-hover: #f7f7f7;
+  --palette-bg-primary-selected: #f7f7f7;
+  --palette-bg-primary-error: #fff8f6;
+  --palette-bg-primary-core: #ff385c;
+  --palette-bg-primary-luxe: #460479;
+  --palette-bg-primary-plus: #92174d;
+  --palette-bg-primary-inverse: #222222;
+  --palette-bg-primary-inverse-hover: #000000;
+  --palette-bg-primary-inverse-disabled: #dddddd;
+  --palette-bg-primary-inverse-error: #c13515;
+  --palette-bg-primary-inverse-error-hover: #b32505;
+  --palette-bg-secondary: #f7f7f7;
+  --palette-bg-secondary-core: linear-gradient(to right, #e61e4d 0%, #e31c5f 50%, #d70466 100%);
+  --palette-bg-secondary-core-rtl: linear-gradient(to left, #e61e4d 0%, #e31c5f 50%, #d70466 100%);
+  --palette-bg-secondary-plus: linear-gradient(to right, #bd1e59 0%, #92174d 50%, #861453 100%);
+  --palette-bg-secondary-plus-rtl: linear-gradient(to left, #bd1e59 0%, #92174d 50%, #861453 100%);
+  --palette-bg-secondary-luxe: linear-gradient(to right, #59086e 0%, #460479 50%, #440589 100%);
+  --palette-bg-secondary-luxe-rtl: linear-gradient(to left, #59086e 0%, #460479 50%, #440589 100%);
+  --palette-bg-secondary-core-hover: radial-gradient(
+    circle at center,
+    #ff385c 0%,
+    #e61e4d 27.5%,
+    #e31c5f 40%,
+    #d70466 57.5%,
+    #bd1e59 75%,
+    #bd1e59 100%
+  );
+  --palette-bg-secondary-plus-hover: radial-gradient(
+    circle at center,
+    #d70466 0%,
+    #bd1e59 30%,
+    #92174d 55%,
+    #861453 72.5%,
+    #6c0d63 90%,
+    #6c0d63 100%
+  );
+  --palette-bg-secondary-luxe-hover: radial-gradient(
+    circle at center,
+    #6c0d63 0%,
+    #59086e 30%,
+    #460479 55%,
+    #440589 72.5%,
+    #3b07bb 90%,
+    #3b07bb 100%
+  );
+  --palette-bg-tertiary: #b0b0b0;
+  --palette-bg-tertiary-hover: #6a6a6a;
+  --palette-bg-tertiary-disabled: #ebebeb;
+  --palette-bg-tertiary-core: #e00b41;
+  --palette-bg-quaternary: #f2f2f2;
+  --palette-bg-quaternary-hover: #ebebeb;
+  --palette-text-primary: #222222;
+  --palette-text-primary-disabled: #dddddd;
+  --palette-text-primary-hover: #000000;
+  --palette-text-primary-error: #c13515;
+  --palette-text-primary-error-hover: #b32505;
+  --palette-text-primary-inverse: #ffffff;
+  --palette-text-primary-core: linear-gradient(to right, #e61e4d 0%, #e31c5f 50%, #d70466 100%);
+  --palette-text-secondary: #6a6a6a;
+  --palette-text-secondary-disabled: #dddddd;
+  --palette-text-secondary-error: #c13515;
+  --palette-text-secondary-error-hover: #b32505;
+  --palette-text-legal: #428bff;
+  --palette-text-link-disabled: #929292;
+  --palette-text-focused: #3f3f3f;
+  --palette-text-material-disabled: rgba(0, 0, 0, 0.24);
+  --palette-icon-primary: #222222;
+  --palette-icon-primary-disabled: #dddddd;
+  --palette-icon-primary-hover: #000000;
+  --palette-icon-primary-error: #c13515;
+  --palette-icon-primary-error-hover: #b32505;
+  --palette-icon-primary-inverse: #ffffff;
+  --palette-icon-secondary: #6a6a6a;
+  --palette-icon-secondary-hover: #222222;
+  --palette-icon-secondary-selected: #222222;
+  --palette-icon-secondary-disabled: #f7f7f7;
+  --palette-icon-tertiary: #8c8c8c;
+  --palette-icon-error: #c13515;
+  --palette-icon-warning: #e07912;
+  --palette-icon-info: #428bff;
+  --palette-icon-success: #008a05;
+  --palette-border-primary: #222222;
+  --palette-border-primary-hover: #000000;
+  --palette-border-primary-disabled: #dddddd;
+  --palette-border-primary-inverse: #ffffff;
+  --palette-border-secondary: #b0b0b0;
+  --palette-border-secondary-hover: #222222;
+  --palette-border-secondary-selected: #222222;
+  --palette-border-secondary-disabled: #ebebeb;
+  --palette-border-secondary-error: #c13515;
+  --palette-border-tertiary: #dddddd;
+  --palette-border-tertiary-hover: #000000;
+  --palette-border-tertiary-selected: #222222;
+  --palette-border-tertiary-error: #c13515;
+  --palette-border-tertiary-error-hover: #b32505;
+  --palette-border-quarternary: #8c8c8c;
+  --palette-shadow50: rgba(0, 0, 0, 0.04);
+  --palette-shadow100: rgba(0, 0, 0, 0.08);
+  --palette-shadow150: rgba(0, 0, 0, 0.12);
+  --palette-shadow200: rgba(0, 0, 0, 0.135);
+  --palette-shadow250: rgba(0, 0, 0, 0.18);
+  --palette-shadow300: rgba(0, 0, 0, 0.2);
+  --palette-shadow350: rgba(0, 0, 0, 0.28);
+  --palette-shadow600: rgba(0, 0, 0, 0.6);
+  --palette-grey0: #ffffff;
+  --palette-grey100: #f7f7f7;
+  --palette-grey200: #f2f2f2;
+  --palette-grey300: #ebebeb;
+  --palette-grey400: #dddddd;
+  --palette-grey500: #c1c1c1;
+  --palette-grey600: #8c8c8c;
+  --palette-grey700: #6c6c6c;
+  --palette-grey800: #515151;
+  --palette-grey900: #3f3f3f;
+  --palette-grey1000: #222222;
+  --palette-grey1100: #000000;
+  --palette-red100: #fff5f3;
+  --palette-red200: #ffefec;
+  --palette-red300: #ffe6e2;
+  --palette-red400: #ffd3cd;
+  --palette-red500: #ffaca5;
+  --palette-red600: #f84a43;
+  --palette-red700: #d7251c;
+  --palette-red800: #a3150f;
+  --palette-red900: #772320;
+  --palette-red1000: #381918;
+  --palette-green100: #f1faf2;
+  --palette-green200: #e6f6e9;
+  --palette-green300: #dcf1e1;
+  --palette-green400: #c3e6cc;
+  --palette-green500: #8dd19e;
+  --palette-green600: #12a139;
+  --palette-green700: #038026;
+  --palette-green800: #015f1a;
+  --palette-green900: #104b20;
+  --palette-green1000: #112716;
+  --palette-blue100: #f0f8ff;
+  --palette-blue200: #e8f3fe;
+  --palette-blue300: #ddedfe;
+  --palette-blue400: #c6e0fe;
+  --palette-blue500: #94c5fd;
+  --palette-blue600: #318cf7;
+  --palette-blue700: #166bd8;
+  --palette-blue800: #0d4daa;
+  --palette-blue900: #173f7f;
+  --palette-blue1000: #162339;
+  --palette-orange100: #fef6ec;
+  --palette-orange200: #fdf0e1;
+  --palette-orange300: #fde8d4;
+  --palette-orange400: #fbd8bb;
+  --palette-orange500: #f7b383;
+  --palette-orange600: #eb6100;
+  --palette-orange700: #be4900;
+  --palette-orange800: #8f3400;
+  --palette-orange900: #712a05;
+  --palette-orange1000: #371c10;
+  --palette-purple100: #f7f6ff;
+  --palette-purple200: #f3f1ff;
+  --palette-purple300: #ece9fe;
+  --palette-purple400: #ded9fe;
+  --palette-purple500: #c2b9fe;
+  --palette-purple600: #8c78ff;
+  --palette-purple700: #6e57e4;
+  --palette-purple800: #503eb2;
+  --palette-purple900: #413582;
+  --palette-purple1000: #221f38;
+  --palette-magenta100: #fdf5fb;
+  --palette-magenta200: #fbeff8;
+  --palette-magenta300: #fae6f5;
+  --palette-magenta400: #f5d3ec;
+  --palette-magenta500: #efadde;
+  --palette-magenta600: #e54ec1;
+  --palette-magenta700: #bd31a1;
+  --palette-magenta800: #901e7c;
+  --palette-magenta900: #6a255e;
+  --palette-magenta1000: #311b2d;
+  --palette-rausch100: #fff5f6;
+  --palette-rausch200: #ffeef0;
+  --palette-rausch300: #fee5e7;
+  --palette-rausch400: #ffd2d7;
+  --palette-rausch500: #ffabb6;
+  --palette-rausch600: #ff385c;
+  --palette-rausch700: #da1249;
+  --palette-rausch800: #a21039;
+  --palette-rausch900: #732139;
+  --palette-rausch1000: #361a21;
+  --palette-beige100: #f7f6f2;
+  --palette-beige200: #f4f2ec;
+  --palette-beige300: #eeebe5;
+  --palette-beige400: #dfdcd6;
+  --palette-beige500: #c5c1bb;
+  --palette-beige600: #8f8b87;
+  --palette-beige700: #6e6a66;
+  --palette-beige800: #53514e;
+  --palette-beige900: #413f3d;
+  --palette-beige1000: #232221;
+  --material-backgrounds-extra-thin-background-color: rgba(218, 218, 218, 0.4);
+  --material-backgrounds-extra-thin-backdrop-filter: blur(8px) saturate(1);
+  --material-backgrounds-thin-background-color: rgba(240, 240, 240, 0.5);
+  --material-backgrounds-thin-backdrop-filter: blur(36px) saturate(1.6);
+  --material-backgrounds-regular-background-color: rgba(250, 250, 250, 0.72);
+  --material-backgrounds-regular-backdrop-filter: blur(24px) saturate(1.6);
+  --material-backgrounds-thick-background-color: rgba(240, 240, 240, 0.86);
+  --material-backgrounds-thick-backdrop-filter: blur(12px) saturate(3);
+  --material-backgrounds-extra-thick-background-color: rgba(255, 255, 255, 0.925);
+  --material-backgrounds-extra-thick-backdrop-filter: blur(16px) saturate(1.6);
+
+  /* JCI official brand (primary accent replaces former Rausch / “red” CTA) */
+  --jci-blue: #0097d7;
+  --jci-blue-hover: #007bb0;
+  --jci-black: #130f2d;
+  --jci-white: #ffffff;
+  --jci-navy: #1f4789;
+  --jci-teal: #57bcbc;
+  --jci-yellow: #efc40f;
+
+  /* App semantics — JCI blue as main brand; neutrals from Airbnb greys */
+  --background: var(--jci-white);
+  --foreground: var(--jci-black);
+  --surface-soft: var(--palette-bg-primary-selected);
+  --card: var(--palette-grey0);
+  --card-foreground: var(--jci-black);
+  --popover: var(--palette-grey0);
+  --popover-foreground: var(--jci-black);
+  --primary: var(--jci-blue);
+  --primary-foreground: var(--jci-white);
+  --primary-hover: var(--jci-blue-hover);
+  --brand-link: var(--jci-blue);
+  --icon-muted: var(--palette-icon-secondary);
+  --secondary: var(--palette-bg-secondary);
+  --secondary-foreground: var(--jci-black);
+  --muted: var(--palette-bg-secondary);
+  --muted-foreground: var(--palette-text-secondary);
+  --accent: var(--palette-bg-quaternary);
+  --accent-foreground: var(--jci-black);
+  --destructive: var(--palette-text-primary-error);
+  --border: var(--palette-border-tertiary);
+  --input: var(--palette-border-tertiary);
+  --ring: var(--jci-blue);
+  --success: var(--palette-green700);
+  --chart-1: var(--jci-blue);
+  --chart-2: var(--jci-navy);
+  --chart-3: var(--jci-teal);
+  --chart-4: var(--jci-yellow);
+  --chart-5: var(--palette-grey700);
+  --radius: 1rem;
+  --sidebar: var(--palette-grey100);
+  --sidebar-foreground: var(--palette-text-primary);
+  --sidebar-primary: var(--palette-grey1000);
+  --sidebar-primary-foreground: var(--palette-grey0);
+  --sidebar-accent: var(--palette-grey200);
+  --sidebar-accent-foreground: var(--palette-text-primary);
+  --sidebar-border: var(--palette-border-tertiary);
+  --sidebar-ring: var(--palette-text-legal);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0.00 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: var(--jci-black);
+  --foreground: var(--jci-white);
+  --surface-soft: color-mix(in srgb, var(--jci-white) 10%, transparent);
+  --card: color-mix(in srgb, var(--jci-white) 8%, var(--jci-black));
+  --card-foreground: var(--jci-white);
+  --popover: color-mix(in srgb, var(--jci-white) 8%, var(--jci-black));
+  --popover-foreground: var(--jci-white);
+  --primary: var(--jci-blue);
+  --primary-foreground: var(--jci-white);
+  --primary-hover: var(--jci-teal);
+  --brand-link: color-mix(in srgb, var(--jci-blue) 85%, white);
+  --icon-muted: var(--palette-grey500);
+  --secondary: color-mix(in srgb, var(--jci-white) 12%, var(--jci-black));
+  --secondary-foreground: var(--jci-white);
+  --muted: color-mix(in srgb, var(--jci-white) 12%, var(--jci-black));
+  --muted-foreground: var(--palette-grey400);
+  --accent: color-mix(in srgb, var(--jci-white) 16%, var(--jci-black));
+  --accent-foreground: var(--jci-white);
+  --destructive: var(--palette-red500);
+  --border: color-mix(in srgb, var(--jci-white) 18%, var(--jci-black));
+  --input: color-mix(in srgb, var(--jci-white) 18%, var(--jci-black));
+  --ring: var(--jci-teal);
+  --chart-1: var(--jci-blue);
+  --chart-2: var(--jci-teal);
+  --chart-3: var(--jci-navy);
+  --chart-4: var(--jci-yellow);
+  --chart-5: var(--palette-grey500);
+  --sidebar: var(--jci-black);
+  --sidebar-foreground: var(--jci-white);
+  --sidebar-primary: var(--jci-blue);
+  --sidebar-primary-foreground: var(--jci-white);
+  --sidebar-accent: color-mix(in srgb, var(--jci-white) 12%, var(--jci-black));
+  --sidebar-accent-foreground: var(--jci-white);
+  --sidebar-border: color-mix(in srgb, var(--jci-white) 15%, var(--jci-black));
+  --sidebar-ring: var(--jci-teal);
 }
 
 @layer base {
@@ -132,6 +361,12 @@
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
   body {
-    @apply bg-surface text-primary min-h-screen;
+    @apply min-h-screen bg-background text-foreground antialiased;
+  }
+  a:not([class]) {
+    color: var(--brand-link);
+  }
+  a:not([class]):hover {
+    color: var(--jci-navy);
   }
 }

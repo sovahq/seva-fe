@@ -84,7 +84,7 @@ export function PermissionsMatrix({
       <CardContent className="overflow-x-auto">
         <table className="w-full min-w-[500px] border-collapse text-sm">
           <thead>
-            <tr style={{ borderColor: "rgba(0,45,91,0.15)" }} className="border-b">
+            <tr className="border-b border-border">
               <th
                 className="py-3 pr-4 text-left font-medium"
                 style={{ color: "var(--primary)" }}
