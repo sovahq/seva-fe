@@ -22,38 +22,47 @@ import {
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
 
-const PLAN_ORDER: SubscriptionPlanId[] = ["starter", "standard", "enterprise"]
+const PLAN_ORDER: SubscriptionPlanId[] = ["small_chapter", "mid_chapter", "large_chapter"]
+
+/** Published list prices per tier (demo NGN / year) */
+const TIER_LIST_PRICE_MINOR: Record<SubscriptionPlanId, number> = {
+  small_chapter: 250_000_00,
+  mid_chapter: 450_000_00,
+  large_chapter: 1_200_000_00,
+}
 
 const PLAN_DETAILS: Record<
   SubscriptionPlanId,
-  { headline: string; bullets: string[] }
+  { title: string; capacityLine: string; headline: string; bullets: string[] }
 > = {
-  starter: {
-    headline: "For small chapters getting organised.",
+  small_chapter: {
+    title: "Small chapter",
+    capacityLine: "Up to 30 members",
+    headline: "Flat yearly fee — simple for treasurers to budget.",
     bullets: [
-      "Up to 25 seats",
-      "Governance & meetings",
-      "Member directory",
-      "Email support",
+      "Full Seva workspace (governance, meetings, members, finance)",
+      "One predictable line item — not a per-member tax",
+      "Best fit when your roster stays compact",
     ],
   },
-  standard: {
-    headline: "For growing organisations that need depth.",
+  mid_chapter: {
+    title: "Mid-size chapter",
+    capacityLine: "Up to 100 members",
+    headline: "Room to grow without jumping to unlimited pricing.",
     bullets: [
-      "Up to 50 seats",
-      "Everything in Starter",
-      "Finance & dues workflows",
-      "Board permissions",
-      "Priority support",
+      "Same product features as every tier — capacity is the only difference",
+      "Fair middle ground for growing LOs",
+      "Annual invoice friendly for handovers year to year",
     ],
   },
-  enterprise: {
-    headline: "For multi-chapter or complex governance.",
+  large_chapter: {
+    title: "Large chapter",
+    capacityLine: "Unlimited members",
+    headline: "No ceiling on roster size — one flat patron-style fee.",
     bullets: [
-      "Unlimited seats",
-      "Everything in Standard",
-      "Custom reporting exports",
-      "Dedicated success manager",
+      "Supports very large chapters and complex boards",
+      "Treasury still gets a single annual number to plan around",
+      "Priority support (when billing goes live)",
     ],
   },
 }
@@ -66,6 +75,13 @@ function formatMoneyMinor(amountMinor: number, currency: PrimaryCurrency): strin
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(major)
+}
+
+function capacityLineFromSubscription(sub: OrganizationSubscription): string {
+  if (sub.seatsIncluded == null) {
+    return "Unlimited members on this plan"
+  }
+  return `Up to ${sub.seatsIncluded} members on this plan`
 }
 
 function subscriptionStatusBadge(
@@ -108,6 +124,7 @@ export interface BillingContentProps {
 
 export function BillingContent({ organization, subscription, invoices }: BillingContentProps) {
   const orgName = organization?.name ?? "Your organisation"
+  const displayCurrency = organization?.primaryCurrency ?? subscription?.currency ?? "NGN"
   const hasOpenInvoice = invoices.some((i) => i.status === "open")
   const primaryCtaLabel =
     subscription?.status === "past_due" || hasOpenInvoice
@@ -134,9 +151,27 @@ export function BillingContent({ organization, subscription, invoices }: Billing
         <h1 className="text-3xl font-bold tracking-tight text-primary">Plan & billing</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
           Subscription and invoices for <span className="font-semibold text-foreground">{orgName}</span>.
-          Manage your Seva workspace access and payment details.
+          Seva uses <span className="font-medium text-foreground">tiered flat fees by chapter size</span> — one
+          annual price per bucket (member capacity), not per-seat metering.
         </p>
       </header>
+
+      <section aria-labelledby="treasurer-tip-heading">
+        <Card className="border-border bg-muted/40">
+          <CardHeader className="pb-2">
+            <CardTitle id="treasurer-tip-heading" className="text-base">
+              A note for treasurers (and incoming boards)
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+              JCI treasurers change every year. Many chapters find it easiest to{" "}
+              <span className="font-medium text-foreground">include Seva in annual dues</span> — for example, if
+              dues are ₦25,000, communicate ₦26,000 with a clear line that the difference covers the chapter&apos;s
+              Seva subscription for project tracking and reporting. Members effectively crowdfund the tool; the board
+              keeps a single predictable platform fee.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -146,13 +181,11 @@ export function BillingContent({ organization, subscription, invoices }: Billing
           <Card className="border-border">
             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-xl">{subscription.planLabel} plan</CardTitle>
+                <CardTitle className="text-xl">{subscription.planLabel}</CardTitle>
                 <CardDescription className="mt-1 text-base">
                   {formatMoneyMinor(subscription.amountMinor, subscription.currency)} per{" "}
                   {subscription.interval === "year" ? "year" : "month"}
-                  {subscription.seatsIncluded != null
-                    ? ` · up to ${subscription.seatsIncluded} seats`
-                    : null}
+                  <span className="mt-1 block text-muted-foreground">{capacityLineFromSubscription(subscription)}</span>
                 </CardDescription>
               </div>
               <Badge variant={subscriptionStatusBadge(subscription.status).variant} className="w-fit shrink-0">
@@ -197,7 +230,8 @@ export function BillingContent({ organization, subscription, invoices }: Billing
             <CardHeader>
               <CardTitle>No subscription on file</CardTitle>
               <CardDescription>
-                Choose a plan below to continue using Seva for your organisation after the preview period.
+                Pick the capacity tier that matches your chapter size — pricing is a flat annual fee per bucket, not
+                per member.
               </CardDescription>
             </CardHeader>
             <CardFooter>
@@ -211,14 +245,17 @@ export function BillingContent({ organization, subscription, invoices }: Billing
 
       <section className="space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Compare plans
+          Capacity tiers (flat yearly fee)
         </h2>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          Same product across tiers — you only choose how many members your chapter needs on the platform. That
+          keeps pitching simple: compare three numbers to the board, not a spreadsheet of per-head charges.
+        </p>
         <div className="grid gap-4 md:grid-cols-3">
           {PLAN_ORDER.map((planId) => {
             const details = PLAN_DETAILS[planId]
             const isCurrent = subscription?.planId === planId
-            const title =
-              planId === "starter" ? "Starter" : planId === "standard" ? "Standard" : "Enterprise"
+            const listMinor = TIER_LIST_PRICE_MINOR[planId]
             return (
               <Card
                 key={planId}
@@ -233,8 +270,13 @@ export function BillingContent({ organization, subscription, invoices }: Billing
                   </span>
                 ) : null}
                 <CardHeader>
-                  <CardTitle className="text-lg">{title}</CardTitle>
+                  <CardTitle className="text-lg">{details.title}</CardTitle>
+                  <p className="text-sm font-semibold text-primary">{details.capacityLine}</p>
                   <CardDescription>{details.headline}</CardDescription>
+                  <p className="pt-2 text-lg font-bold tabular-nums text-foreground">
+                    {formatMoneyMinor(listMinor, displayCurrency)}
+                    <span className="text-sm font-normal text-muted-foreground"> / year</span>
+                  </p>
                 </CardHeader>
                 <CardContent className="flex-1">
                   <ul className="space-y-2 text-sm text-muted-foreground">
@@ -254,7 +296,7 @@ export function BillingContent({ organization, subscription, invoices }: Billing
                     disabled={isCurrent}
                     onClick={handlePrimaryPayAction}
                   >
-                    {isCurrent ? "Your plan" : `Select ${title}`}
+                    {isCurrent ? "Your plan" : `Select ${details.title}`}
                   </Button>
                 </CardFooter>
               </Card>

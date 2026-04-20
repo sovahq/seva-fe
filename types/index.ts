@@ -272,7 +272,8 @@ export interface DuesSubmission {
 }
 
 /** Organisation SaaS subscription (mock until billing API exists) */
-export type SubscriptionPlanId = "starter" | "standard" | "enterprise"
+/** Tiered flat fee by member capacity (Small / Mid-size / Large chapter), not per-seat metering */
+export type SubscriptionPlanId = "small_chapter" | "mid_chapter" | "large_chapter"
 
 export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled"
 
@@ -289,6 +290,7 @@ export interface OrganizationSubscription {
   interval: BillingInterval
   currentPeriodEnd: string
   trialEndsAt?: string
+  /** Max members included in this tier; omit for unlimited (large chapter) */
   seatsIncluded?: number
   paymentMethodSummary?: string
   cancelAtPeriodEnd?: boolean
