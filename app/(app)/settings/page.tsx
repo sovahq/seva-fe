@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
@@ -63,7 +64,14 @@ export default function SettingsPage() {
         Settings
       </h1>
       <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>
-        Manage your organisation settings, branding, and data.
+        Manage your organisation settings, branding, and data.{" "}
+        <Link
+          href={ROUTES.BILLING}
+          className="font-medium text-brand-link underline-offset-2 hover:underline"
+        >
+          Subscription and invoices
+        </Link>{" "}
+        are on the billing page.
       </p>
 
       <div className="mt-6 flex flex-col gap-6 sm:flex-row">

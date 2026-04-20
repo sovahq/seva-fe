@@ -9,6 +9,7 @@ export const ROUTES = {
   FINANCE: "/finance",
   BOARD: "/board",
   SETTINGS: "/settings",
+  BILLING: "/billing",
   PROFILE: "/profile",
   DUES: "/dues",
   UNAUTHORIZED: "/unauthorized",

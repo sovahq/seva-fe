@@ -12,6 +12,7 @@ import {
   FileText,
   LayoutList,
   Settings,
+  CreditCard,
   User,
   LogOut,
 } from "lucide-react"
@@ -34,6 +35,7 @@ const PRIMARY_ICONS = {
 const NESTED_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   governance: FileText,
   board: LayoutList,
+  billing: CreditCard,
   settings: Settings,
 }
 
@@ -54,6 +56,7 @@ function nestedNavItems(
   return [
     { to: paths.governance, label: "Governance", resource: "governance", iconKey: "governance" },
     { to: paths.board, label: "Board", resource: "governance", iconKey: "board" },
+    { to: ROUTES.BILLING, label: "Billing", iconKey: "billing" },
     { to: ROUTES.SETTINGS, label: "Settings", iconKey: "settings" },
   ]
 }
@@ -144,7 +147,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return hasAccess(item.resource)
   })
   const nestedItems = nestedNavItems(paths).filter((item) => {
-    if (currentUser.role === "member" && item.to === ROUTES.SETTINGS) return false
+    if (
+      currentUser.role === "member" &&
+      (item.to === ROUTES.SETTINGS || item.to === ROUTES.BILLING)
+    )
+      return false
     return item.resource == null || hasAccess(item.resource)
   })
   const moreMenuPaths = nestedItems.map((i) => i.to)

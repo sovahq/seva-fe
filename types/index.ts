@@ -270,3 +270,39 @@ export interface DuesSubmission {
   confirmedAt: string | null
   confirmedBy: string | null
 }
+
+/** Organisation SaaS subscription (mock until billing API exists) */
+export type SubscriptionPlanId = "starter" | "standard" | "enterprise"
+
+export type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled"
+
+export type BillingInterval = "month" | "year"
+
+export interface OrganizationSubscription {
+  organizationId: string
+  planId: SubscriptionPlanId
+  planLabel: string
+  status: SubscriptionStatus
+  currency: PrimaryCurrency
+  /** Price in minor units (e.g. kobo for NGN) per interval */
+  amountMinor: number
+  interval: BillingInterval
+  currentPeriodEnd: string
+  trialEndsAt?: string
+  seatsIncluded?: number
+  paymentMethodSummary?: string
+  cancelAtPeriodEnd?: boolean
+}
+
+export type BillingInvoiceStatus = "paid" | "open" | "void"
+
+export interface BillingInvoice {
+  id: string
+  organizationId: string
+  issuedAt: string
+  /** Amount in minor units */
+  amountMinor: number
+  currency: PrimaryCurrency
+  status: BillingInvoiceStatus
+  pdfUrl?: string
+}

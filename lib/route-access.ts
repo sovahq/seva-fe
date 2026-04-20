@@ -15,8 +15,8 @@ const ROUTE_ACCESS: { pathPrefix: string; resource: Resource }[] = [
   { pathPrefix: ROUTES.DASHBOARD, resource: "membership" },
 ]
 
-/** Settings: only non-member roles can access (admin, board, finance). */
-function canAccessSettings(role: UserRole): boolean {
+/** Settings, billing, and similar org-admin areas: only non-member roles. */
+function canAccessOrgAdminArea(role: UserRole): boolean {
   return role !== "member"
 }
 
@@ -43,9 +43,12 @@ export function canAccessRoute(
     return true
   }
 
-  // Settings: only non-members
+  // Settings & billing: only non-members
   if (pathname === ROUTES.SETTINGS || pathname.startsWith(ROUTES.SETTINGS + "/")) {
-    return canAccessSettings(role)
+    return canAccessOrgAdminArea(role)
+  }
+  if (pathname === ROUTES.BILLING || pathname.startsWith(ROUTES.BILLING + "/")) {
+    return canAccessOrgAdminArea(role)
   }
 
   // Members: membership access but not for member role
