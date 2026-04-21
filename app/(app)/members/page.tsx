@@ -20,7 +20,6 @@ import {
 } from "@/lib/member-engagement"
 import type {
   Member,
-  Meeting,
   AttendanceRecord,
   InductionProspect,
   InductionStage,
@@ -130,7 +129,7 @@ function healthLabel(s: MemberHealthStatus): string {
 export default function MembersPage() {
   const router = useRouter()
   const { currentOrganizationId, currentUser } = useAuth()
-  const { meetings, attendance, addAttendanceRecord } = useMeetings()
+  const { attendance } = useMeetings()
   const orgId = currentOrganizationId ?? ""
   const canManageMembership = currentUser ? canManage(currentUser.role, "membership") : false
 
@@ -154,10 +153,6 @@ export default function MembersPage() {
   const members = useMemo(
     () => mockMembers.filter((m) => m.organizationId === orgId && !m.id.startsWith("m-demo")),
     [orgId]
-  )
-  const orgMeetings = useMemo(
-    () => meetings.filter((m) => m.organizationId === orgId),
-    [meetings, orgId]
   )
   const orgAttendance = useMemo(
     () => attendance.filter((a) => a.organizationId === orgId),
@@ -241,13 +236,7 @@ export default function MembersPage() {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <EngagementTab
-                members={members}
-                meetings={orgMeetings}
-                attendance={orgAttendance}
-                addAttendanceRecord={addAttendanceRecord}
-                canManageMembership={canManageMembership}
-              />
+              <EngagementTab members={members} attendance={orgAttendance} />
             </motion.div>
           )}
           {activeTab === "induction" && (
@@ -472,29 +461,16 @@ function DirectoryTab({
 
 function EngagementTab({
   members,
-  meetings,
   attendance,
-  canManageMembership,
-  addAttendanceRecord,
 }: {
   members: Member[]
-  meetings: Meeting[]
   attendance: AttendanceRecord[]
-  canManageMembership: boolean
-  addAttendanceRecord: (record: AttendanceRecord) => void
 }) {
-  const [selectedMeetingId, setSelectedMeetingId] = useState<string>("")
-  const [presentIds, setPresentIds] = useState<Set<string>>(new Set())
-  const [saved, setSaved] = useState(false)
-  const [localAttendance, setLocalAttendance] = useState<AttendanceRecord[]>([])
-
-  const meetingOptions = useMemo(() => meetings.filter((m) => m.organizationId), [meetings])
-  const allAttendance = useMemo(() => [...attendance, ...localAttendance], [attendance, localAttendance])
   const lastAttendanceByMember = useMemo(() => {
     const map = new Map<string, string | null>()
-    members.forEach((m) => map.set(m.id, getLastAttendanceDate(m.id, allAttendance)))
+    members.forEach((m) => map.set(m.id, getLastAttendanceDate(m.id, attendance)))
     return map
-  }, [members, allAttendance])
+  }, [members, attendance])
   const healthByMember = useMemo(() => {
     const map = new Map<string, MemberHealthStatus>()
     members.forEach((m) => {
@@ -514,33 +490,6 @@ function EngagementTab({
       { name: "Inactive", count: counts.inactive, fill: "var(--chart-inactive, #ef4444)" },
     ]
   }, [healthByMember])
-
-  function togglePresent(memberId: string) {
-    setPresentIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(memberId)) next.delete(memberId)
-      else next.add(memberId)
-      return next
-    })
-    setSaved(false)
-  }
-
-  function saveAttendance() {
-    if (!selectedMeetingId) return
-    const now = new Date().toISOString()
-    const orgId = members[0]?.organizationId ?? ""
-    const newRecords: AttendanceRecord[] = Array.from(presentIds).map((memberId, i) => ({
-      id: `local-att-${Date.now()}-${i}`,
-      organizationId: orgId,
-      meetingId: selectedMeetingId,
-      memberId,
-      recordedAt: now,
-    }))
-    newRecords.forEach(addAttendanceRecord)
-    setLocalAttendance([])
-    setPresentIds(new Set())
-    setSaved(true)
-  }
 
   return (
     <div className="space-y-6">
@@ -562,61 +511,6 @@ function EngagementTab({
           </div>
         </CardContent>
       </Card>
-      {canManageMembership && (
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-sm font-medium mb-3" style={{ color: "var(--primary)" }}>
-              Attendance logger
-            </h3>
-            <p className="text-xs mb-3" style={{ color: "var(--muted-foreground)" }}>
-              Select a meeting and mark who attended. Save to record.
-            </p>
-            <div className="flex flex-wrap gap-2 items-end">
-              <div className="min-w-[200px]">
-                <label className="block text-xs font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>
-                  Meeting
-                </label>
-                <select
-                  value={selectedMeetingId}
-                  onChange={(e) => setSelectedMeetingId(e.target.value)}
-                  className="w-full rounded-lg border bg-card px-3 py-2 text-sm"
-                  style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-                >
-                  <option value="">Select meeting</option>
-                  {meetingOptions.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name} ({m.date})</option>
-                  ))}
-                </select>
-              </div>
-              <Button size="sm" onClick={saveAttendance} disabled={!selectedMeetingId}>
-                Save attendance
-              </Button>
-              {saved && (
-                <span className="text-xs self-center" style={{ color: "var(--muted-foreground)" }}>
-                  Saved.
-                </span>
-              )}
-            </div>
-            {selectedMeetingId && (
-              <ul className="mt-3 grid gap-1 sm:grid-cols-2 max-h-48 overflow-y-auto">
-                {members.map((m) => (
-                  <li key={m.id}>
-                    <label className="flex items-center gap-2 cursor-pointer py-1 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={presentIds.has(m.id)}
-                        onChange={() => togglePresent(m.id)}
-                        className="rounded border-border"
-                      />
-                      {m.name}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardContent className="p-4">

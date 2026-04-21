@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { Plus, ChevronDown, ChevronRight } from "lucide-react"
+import { Plus, ChevronDown, ChevronRight, Ellipsis } from "lucide-react"
 import type { BoardPosition } from "@/types"
 import { APP_MODULES } from "@/lib/app-modules"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
 const ROOT_ID = "__root__"
@@ -311,6 +312,7 @@ function TreeNode({
 }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(position.name)
+  const [actionsOpen, setActionsOpen] = useState(false)
 
   return (
     <div
@@ -378,16 +380,7 @@ function TreeNode({
             {position.name}
           </span>
           {!disabled && (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={() => setEditing(true)}
-                className="opacity-70 group-hover:opacity-100"
-              >
-                Edit
-              </Button>
+            <div className="ml-auto flex items-center gap-1">
               <Button
                 type="button"
                 variant="ghost"
@@ -398,17 +391,48 @@ function TreeNode({
                 <Plus className="size-3 mr-0.5" />
                 Add under
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={() => onRemove(position.id)}
-                style={{ color: "var(--destructive)" }}
-                className="opacity-70 group-hover:opacity-100"
-              >
-                Remove
-              </Button>
-            </>
+              <Popover open={actionsOpen} onOpenChange={setActionsOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    className="opacity-70 group-hover:opacity-100"
+                    aria-label={`More actions for ${position.name}`}
+                  >
+                    <Ellipsis className="size-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-36 p-1.5">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setEditing(true)
+                        setActionsOpen(false)
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="w-full justify-start text-destructive hover:text-destructive"
+                      onClick={() => {
+                        onRemove(position.id)
+                        setActionsOpen(false)
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
         </>
       )}
